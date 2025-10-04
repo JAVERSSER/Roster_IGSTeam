@@ -10,8 +10,6 @@ import WeeklyScheduleClient from "./client/WeeklyScheduleClient";
 import MonthlyScheduleClient from "./client/MonthlyScheduleClient";
 import SwapRequestsClient from "./client/SwapRequestsClient";
 
-
-
 const IGSApp = () => {
   const [role, setRole] = useState(null); // 'admin' | 'client' | null
   const [currentView, setCurrentView] = useState("login");
