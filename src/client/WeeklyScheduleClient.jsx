@@ -7,14 +7,7 @@ const months = [
 
 const employeeNames = [
   "SUONG SOVOTANAK", "HENG MENGLY", "POR KIMHUCHOR", "ORN TAK", "SOTH SOKLAY",
-  "PHOEUN SOPHANY", "HENG THIRITH",
-];
-
-const shifts = [
-  { label: "6:00am-4:36pm", start: "06:00", end: "16:36" },
-  { label: "8:00am-5:36pm", start: "08:00", end: "17:36" },
-  { label: "1:00pm-10:36pm", start: "13:00", end: "22:36" },
-  { label: "11:00pm-6:36am", start: "23:00", end: "06:36" }
+  "PHOEUN SOPHANY", "HENG THIRITH"
 ];
 
 const getWeekday = (day, month, year) =>
@@ -36,7 +29,7 @@ const getWeekDatesFromMonday = (mondayDate) => {
       day: d.getDate(), 
       month: d.getMonth(), 
       year: d.getFullYear(),
-      weekday: d.getDay() // 0 = Sunday, 6 = Saturday
+      weekday: d.getDay()
     };
   });
 };
@@ -58,28 +51,16 @@ const WeeklyScheduleClient = ({ setCurrentView }) => {
       return employeeNames.map(() => ({
         start: isWeekendDay ? "" : "08:00",
         end: isWeekendDay ? "" : "17:36",
-        status: isWeekendDay ? "off" : "work",
+        status: isWeekendDay ? "off" : "work"
       }));
     });
   };
 
   const [schedule, setSchedule] = useState(initializeSchedule);
-  const [editedCells, setEditedCells] = useState([]);
-  const [selectedCells, setSelectedCells] = useState([]);
-  const [editing, setEditing] = useState(false);
-  const [tempShift, setTempShift] = useState({
-    start: "08:00",
-    end: "17:36",
-    status: "work",
-  });
-
   const weekDates = getWeekDatesFromMonday(currentMonday);
 
   useEffect(() => {
-    const newSchedule = initializeSchedule();
-    setSchedule(newSchedule);
-    setEditedCells([]);
-    setSelectedCells([]);
+    setSchedule(initializeSchedule());
   }, [currentMonday]);
 
   useEffect(() => {
@@ -90,83 +71,14 @@ const WeeklyScheduleClient = ({ setCurrentView }) => {
            d.year === today.getFullYear()
     );
     if (todayIndex !== -1 && headerRefs.current[todayIndex]) {
-      headerRefs.current[todayIndex].scrollIntoView({ behavior: "smooth", inline: "end" });
+      headerRefs.current[todayIndex].scrollIntoView({ 
+        behavior: "smooth", 
+        inline: "center",
+        block: "nearest"
+      });
     }
     setFirstLoad(false);
   }, [weekDates, firstLoad]);
-
-  const toggleSelectCell = (dayIndex, empIndex) => {
-    if (dayIndex >= schedule.length) return;
-    
-    const exists = selectedCells.some(
-      (c) => c.day === dayIndex && c.emp === empIndex
-    );
-    if (exists)
-      setSelectedCells(
-        selectedCells.filter((c) => c.day !== dayIndex || c.emp !== empIndex)
-      );
-    else setSelectedCells([...selectedCells, { day: dayIndex, emp: empIndex }]);
-  };
-
-  const openEditPopup = () => {
-    if (!selectedCells.length) return;
-    const validSelectedCells = selectedCells.filter(cell => cell.day < schedule.length);
-    if (!validSelectedCells.length) {
-      setSelectedCells([]);
-      return;
-    }
-    const { day, emp } = validSelectedCells[0];
-    if (day >= schedule.length || emp >= employeeNames.length) {
-      setSelectedCells([]);
-      return;
-    }
-    const cell = schedule[day][emp];
-    setTempShift({
-      start: cell.start || "08:00",
-      end: cell.end || "17:36",
-      status: cell.status,
-    });
-    setEditing(true);
-  };
-
-  const applyShift = () => {
-    if (!selectedCells.length) return;
-    const validSelectedCells = selectedCells.filter(cell => cell.day < schedule.length);
-    if (!validSelectedCells.length) {
-      setSelectedCells([]);
-      return;
-    }
-
-    const newSchedule = schedule.map((d) => d.map((e) => ({ ...e })));
-    const newEditedCells = [...editedCells];
-
-    validSelectedCells.forEach(({ day, emp }) => {
-      if (day < newSchedule.length && emp < employeeNames.length) {
-        newSchedule[day][emp] = {
-          start: tempShift.status === "off" ? "" : tempShift.start,
-          end: tempShift.status === "off" ? "" : tempShift.end,
-          status: tempShift.status,
-        };
-        if (!editedCells.some((c) => c.day === day && c.emp === emp)) {
-          newEditedCells.push({ day, emp });
-        }
-      }
-    });
-
-    setSchedule(newSchedule);
-    setEditedCells(newEditedCells);
-    setSelectedCells([]);
-    setEditing(false);
-  };
-
-  const toggleDayOff = () => {
-    setTempShift((prev) => ({
-      ...prev,
-      status: prev.status === "off" ? "work" : "off",
-      start: prev.status === "off" ? prev.start || "08:00" : "",
-      end: prev.status === "off" ? prev.end || "17:36" : "",
-    }));
-  };
 
   const prevWeek = () => {
     const newMonday = new Date(currentMonday);
@@ -182,54 +94,63 @@ const WeeklyScheduleClient = ({ setCurrentView }) => {
 
   const goToToday = () => {
     setCurrentMonday(getMonday(today));
+    setFirstLoad(true);
   };
 
   const getWeekRangeDisplay = () => {
     const start = weekDates[0];
     const end = weekDates[6];
+    if (start.month === end.month) {
+      return `${months[start.month]} ${start.day}-${end.day}, ${end.year}`;
+    }
     return `${months[start.month]} ${start.day} - ${months[end.month]} ${end.day}, ${end.year}`;
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navbar */}
-      <div className="bg-gray-200 p-4 flex items-center sticky top-0 z-50 shadow-md flex-wrap">
-        <button
-          onClick={() => setCurrentView("dashboard")}
-          className="mr-3 text-red-500"
-        >
-          Back
-        </button>
-        <h1 className="text-xl font-bold text-red-500 flex-1 text-center">
-          Weekly Schedule (Client) - {getWeekRangeDisplay()}
-        </h1>
-        {/* <div className="flex gap-2 flex-wrap mt-2 md:mt-0">
-          <button onClick={prevWeek} className="bg-gray-300 px-2 py-1 rounded">
-            Prev Week
+      <div className="bg-gray-200 p-3 md:p-4 sticky top-0 z-50 shadow-md">
+        <div className="flex items-center justify-between mb-2 md:mb-0">
+          <button
+            onClick={() => setCurrentView("dashboard")}
+            className="text-red-500 font-medium text-sm md:text-base"
+          >
+            ← Back
           </button>
-          <button onClick={nextWeek} className="bg-gray-300 px-2 py-1 rounded">
-            Next Week
+          <h1 className="text-sm md:text-xl font-bold text-red-500 mx-2 text-center flex-1">
+            {getWeekRangeDisplay()}
+          </h1>
+          <div className="w-12 md:w-16"></div>
+        </div>
+        
+        <div className="flex gap-2 justify-center mt-2">
+          <button 
+            onClick={prevWeek} 
+            className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
+          >
+            Prev
           </button>
-          <button onClick={goToToday} className="bg-blue-500 text-white px-2 py-1 rounded">
+          <button 
+            onClick={nextWeek} 
+            className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
+          >
+            Next
+          </button>
+          <button 
+            onClick={goToToday} 
+            className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-blue-600 transition"
+          >
             Today
           </button>
-          {selectedCells.length > 0 && (
-            <button
-              onClick={openEditPopup}
-              className="bg-red-500 text-white px-2 py-1 rounded"
-            >
-              Edit
-            </button>
-          )}
-        </div> */}
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto p-4" ref={tableRef}>
-        <table className="border-collapse border border-gray-300 w-max min-w-full">
+      {/* Schedule Table */}
+      <div className="overflow-x-auto p-2 md:p-4" ref={tableRef}>
+        <table className="border-collapse border border-gray-300 w-max min-w-full bg-white">
           <thead>
             <tr className="bg-red-500 text-white">
-              <th className="border border-gray-300 px-3 py-2 sticky left-0 bg-red-500 z-20">
+              <th className="border border-gray-300 px-2 py-2 md:px-3 md:py-2 sticky left-0 bg-red-500 z-20 text-xs md:text-sm min-w-[100px] md:min-w-[120px]">
                 IGS Team
               </th>
               {weekDates.map((date, i) => {
@@ -244,11 +165,12 @@ const WeeklyScheduleClient = ({ setCurrentView }) => {
                   <th
                     key={i}
                     ref={el => (headerRefs.current[i] = el)}
-                    className={`border border-gray-300 px-3 py-2 text-center ${
+                    className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center text-xs md:text-sm min-w-[80px] md:min-w-[100px] ${
                       isToday ? "bg-gray-300 text-black" : ""
-                    } ${isWeekendDay ? "bg-red-100 text-red-800" : ""}`}
+                    } ${isWeekendDay && !isToday ? "bg-red-200 text-red-900" : ""}`}
                   >
-                    {`${weekday} ${date.day} ${monthShort}`}
+                    <div>{weekday}</div>
+                    <div>{date.day} {monthShort}</div>
                   </th>
                 );
               })}
@@ -257,56 +179,35 @@ const WeeklyScheduleClient = ({ setCurrentView }) => {
           <tbody>
             {employeeNames.map((name, empIndex) => (
               <tr key={empIndex}>
-                <td className="border border-gray-300 px-3 py-2 font-semibold sticky left-0 bg-white z-10">
+                <td className="border border-gray-300 px-2 py-2 md:px-3 md:py-2 font-semibold sticky left-0 bg-white z-10 text-xs md:text-sm">
                   {name}
                 </td>
                 {weekDates.map((date, dayIndex) => {
-                  if (dayIndex >= schedule.length) return null;
                   const cell = schedule[dayIndex]?.[empIndex] || {
                     start: "08:00",
                     end: "17:36",
-                    status: "work",
+                    status: "work"
                   };
                   const isWeekendDay = isWeekend(date.weekday);
-                  const isSelected = selectedCells.some(
-                    (c) => c.day === dayIndex && c.emp === empIndex
-                  );
-                  const isEdited = editedCells.some(
-                    (c) => c.day === dayIndex && c.emp === empIndex
-                  );
                   const isToday = date.day === today.getDate() &&
                                   date.month === today.getMonth() &&
                                   date.year === today.getFullYear();
-                  const text =
-                    cell.status === "off"
-                      ? "Day Off"
-                      : `${cell.start}-${cell.end}`;
+                  const text = cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`;
                   
                   return (
                     <td
                       key={dayIndex}
-                      onClick={() => toggleSelectCell(dayIndex, empIndex)}
-                      className={`border border-gray-300 px-3 py-2 text-center cursor-pointer
-                        ${isEdited && !isSelected ? "bg-yellow-200" : ""}
-                        ${isSelected ? "bg-red-500 text-white" : ""}
-                        ${isToday && !isSelected ? "bg-gray-300 text-black" : ""}
-                        ${
-                          !isSelected &&
-                          !isEdited &&
-                          !isToday &&
-                          (cell.status === "off" || isWeekendDay)
-                            ? "bg-red-100 text-red-800"
-                            : ""
-                        }
-                        ${
-                          !isSelected &&
-                          !isEdited &&
-                          !isToday &&
-                          cell.status !== "off" && !isWeekendDay
-                            ? "bg-green-100 text-green-800"
-                            : ""
-                        }
-                      `}
+                      className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center text-xs md:text-sm ${
+                        isToday ? "bg-gray-200" : ""
+                      } ${
+                        !isToday && (cell.status === "off" || isWeekendDay)
+                          ? "bg-red-50 text-red-800"
+                          : ""
+                      } ${
+                        !isToday && cell.status !== "off" && !isWeekendDay
+                          ? "bg-green-50 text-green-800"
+                          : ""
+                      }`}
                     >
                       {text}
                     </td>
@@ -317,56 +218,6 @@ const WeeklyScheduleClient = ({ setCurrentView }) => {
           </tbody>
         </table>
       </div>
-
-      {/* Edit Popup */}
-      {editing && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg flex flex-col items-center space-y-2 w-72">
-            <h2 className="font-bold text-lg">Edit Selected Cells</h2>
-            <div className="flex flex-col gap-1 w-full">
-              {shifts.map((shift) => (
-                <button
-                  key={shift.label}
-                  onClick={() => setTempShift({ ...shift, status: "work" })}
-                  className={`px-2 py-1 rounded w-full ${
-                    tempShift.start === shift.start &&
-                    tempShift.end === shift.end &&
-                    tempShift.status !== "off"
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  {shift.label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={toggleDayOff}
-              className={`px-2 py-1 rounded w-full ${
-                tempShift.status === "off"
-                  ? "bg-gray-400 text-white"
-                  : "bg-gray-200"
-              }`}
-            >
-              Day Off
-            </button>
-            <div className="flex gap-2 mt-2 w-full">
-              <button
-                onClick={applyShift}
-                className="bg-red-500 text-white px-3 py-1 rounded flex-1"
-              >
-                OK
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="bg-gray-300 px-3 py-1 rounded flex-1"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
