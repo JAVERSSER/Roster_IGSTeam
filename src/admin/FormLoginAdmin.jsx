@@ -89,14 +89,6 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
       <div className="relative z-10">
         {/* Admin Badge with shield icon */}
         <div className={`text-center mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
-          <div className="inline-block relative mb-4">
-            <div className="absolute inset-0 bg-red-500 blur-2xl opacity-50 animate-pulse-slow"></div>
-            <div className="relative bg-gradient-to-br from-red-500 to-red-700 p-4 rounded-2xl shadow-2xl">
-              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
-              </svg>
-            </div>
-          </div>
           <h1 className="text-7xl font-black mb-2 bg-gradient-to-r from-red-400 via-red-500 to-orange-500 bg-clip-text text-transparent drop-shadow-2xl">
             IGS
           </h1>
