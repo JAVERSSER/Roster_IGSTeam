@@ -34,6 +34,9 @@ const FormLoginClient = ({ userCredentials, setUserCredentials, onLogin }) => {
     "24689": "rith",  // Gaming System Specialist -> SOTH SOKLAY
     "24936": "rith",  // Gaming System Specialist -> PHOEUN SOPHANY
     "24942": "rith",  // Gaming System Specialist -> HENG THIRITH
+
+    "Admin": "rith",  // Gaming System Specialist -> just login
+    "admin": "rith",  // Gaming System Specialist -> just login
   };
 
   const handleLogin = async () => {
