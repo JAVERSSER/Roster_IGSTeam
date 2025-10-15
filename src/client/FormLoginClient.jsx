@@ -123,7 +123,7 @@ const FormLoginClient = ({ userCredentials, setUserCredentials, onLogin }) => {
             {/* Username field */}
             <div className="group">
               <label className="block text-white font-semibold mb-2 text-sm uppercase tracking-wide">
-                Username or ID
+                Your ID
               </label>
               <div className="relative">
                 <input
@@ -146,7 +146,7 @@ const FormLoginClient = ({ userCredentials, setUserCredentials, onLogin }) => {
             {/* Password field */}
             <div className="group">
               <label className="block text-white font-semibold mb-2 text-sm uppercase tracking-wide">
-                Password
+                Password is "rith"
               </label>
               <div className="relative">
                 <input

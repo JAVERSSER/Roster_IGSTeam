@@ -131,7 +131,7 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
                     clipRule="evenodd"
                   />
                 </svg>
-                Username or ID
+                Your ID
               </label>
               <div className="relative">
                 <input
@@ -165,7 +165,7 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
                     clipRule="evenodd"
                   />
                 </svg>
-                Password
+                Password is "rith"
               </label>
               <div className="relative">
                 <input
