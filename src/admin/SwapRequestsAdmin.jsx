@@ -372,8 +372,8 @@ const SwapRequestsAdmin = ({ setCurrentView }) => {
                                 ? "bg-red-500 text-white"
                                 : isTodayDate
                                 ? "bg-orange-100 text-orange-800 border border-orange-300"
-                                : isWeekendDay
-                                ? "bg-blue-100 text-blue-800"
+                                : isWeekend(day, tempDate.month, tempDate.year)
+                                ? "bg-gray-100 hover:bg-gray-200"
                                 : "bg-gray-100 hover:bg-gray-200"
                             }`}
                           >

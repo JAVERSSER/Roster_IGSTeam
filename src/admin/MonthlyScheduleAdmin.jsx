@@ -209,7 +209,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
             onClick={() => setCurrentView("dashboard")}
             className="text-red-500 font-medium text-sm md:text-base"
           >
-            ← Back
+            Back
           </button>
           <h1 className="text-base md:text-xl font-bold text-red-500 mx-2 text-center flex-1">
             {months[currentMonth]} {currentYear}

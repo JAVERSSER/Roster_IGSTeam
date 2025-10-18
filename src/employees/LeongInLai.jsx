@@ -1,6 +1,6 @@
-// src/employees/HengThirith.jsx
-export const HengThirith = {
-  name: "HENG THIRITH",
+// src/employees/LeongInLai
+export const LeongInLai = {
+  name: "LeongInLai",
   initialSchedule: [
     { start: "08:00", end: "17:36", status: "work" },
     { start: "08:00", end: "17:36", status: "work" },
