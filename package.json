@@ -1,7 +1,6 @@
 {
-  "name": "rosterigs",
+  "name": "roster-igs-team",
   "private": true,
-  "homepage": "https://rosterigs.com",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -34,6 +33,4 @@
   "overrides": {
     "vite": "npm:rolldown-vite@7.1.12"
   }
-  
 }
-
