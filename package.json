@@ -1,7 +1,8 @@
 {
-  "name": "my-project",
+  "name": "rosterigs",
   "private": true,
-  "version": "0.0.0",
+  "homepage": "https://rosterigs.com",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -33,4 +34,6 @@
   "overrides": {
     "vite": "npm:rolldown-vite@7.1.12"
   }
+  
 }
+
