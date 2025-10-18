@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://rosterigs.com/:path*",
+      "permanent": true
+    }
+  ]
+}
