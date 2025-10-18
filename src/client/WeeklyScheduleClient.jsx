@@ -6,8 +6,10 @@ const months = [
 ];
 
 const employeeNames = [
-  "SUONG SOVOTANAK", "HENG MENGLY", "POR KIMHUCHOR", "ORN TAK", "SOTH SOKLAY",
-  "PHOEUN SOPHANY", "HENG THIRITH"
+  "LEONG IN LAI",
+  "KHA MAKARA","SIVAKUMAR","NGOUN PHANNY",
+  "SUONG SOVOTANAK", "HENG MENGLY", "POR KIMHUCHOR", "ORN TAK", 
+  "SOTH SOKLAY","PHOEUN SOPHANY", "HENG THIRITH"
 ];
 
 const getWeekday = (day, month, year) =>

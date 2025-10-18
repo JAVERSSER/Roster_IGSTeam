@@ -1,12 +1,49 @@
 import React, { useState, useRef, useEffect } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+
+// ✅ Local hardcoded users
+const localUsers = {
+  "9643": "rith",
+  "3079": "rith",
+  "24706": "rith",
+  "24747": "rith",
+  "8755": "rith",
+  "12286": "rith",
+  "22574": "rith",
+  "9763": "rith",
+  "18982": "rith",
+  "14639": "rith",
+  "23856": "rith",
+  "24689": "rith",
+  "24936": "rith",
+  "24942": "rith",
+  "admin": "rith",
+  "Admin": "rith",
+};
+
+// ✅ Allowed full names (case-insensitive + space-insensitive)
+const allowedNames = [
+  "LEONG IN LAI",
+  "KHA MAKARA",
+  "SIVAKUMAR",
+  "NGOUN PHANNY",
+  "SUONG SOVOTANAK",
+  "HENG MENGLY",
+  "POR KIMHUCHOR",
+  "ORN TAK",
+  "SOTH SOKLAY",
+  "PHOEUN SOPHANY",
+  "HENG THIRITH",
+];
+
+// Helper: normalize input
+function normalize(str) {
+  return str.replace(/\s+/g, "").toLowerCase();
+}
 
 const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-
   const passwordRef = useRef(null);
 
   useEffect(() => {
@@ -15,38 +52,39 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
 
   const handleLogin = async () => {
     setError("");
-    if (!userCredentials.userId || !userCredentials.password) {
+    const username = userCredentials.userId.trim();
+    const password = userCredentials.password.trim().toLowerCase();
+
+    if (!username || !password) {
       return setError("Enter username and password");
     }
 
     setIsLoading(true);
+
     try {
-      // Local hardcoded admin login
-      if (userCredentials.userId === "admin" || "Admin") {
-        if (userCredentials.password === "rith") {
-          localStorage.setItem(
-            "igs_user",
-            JSON.stringify({ username: "admin", role: "admin" })
-          );
-          onLogin();
-          return;
-        } else {
-          throw new Error("Invalid password");
-        }
+      // ✅ Normalize input for checking
+      const normalizedUsername = normalize(username);
+
+      // 1️⃣ Check if input is a valid ID in localUsers
+      const isValidId =
+        localUsers.hasOwnProperty(username) &&
+        localUsers[username] === password;
+
+      // 2️⃣ Check if input matches allowed names (case-insensitive, no space)
+      const isValidName =
+        allowedNames.some((n) => normalize(n) === normalizedUsername) &&
+        password === "rith";
+
+      if (isValidId || isValidName) {
+        localStorage.setItem(
+          "igs_user",
+          JSON.stringify({ username, role: "admin" })
+        );
+        onLogin();
+        return;
       }
 
-      // Firebase Auth login (email + password)
-      await signInWithEmailAndPassword(
-        auth,
-        userCredentials.userId,
-        userCredentials.password
-      );
-
-      localStorage.setItem(
-        "igs_user",
-        JSON.stringify({ username: userCredentials.userId, role: "admin" })
-      );
-      onLogin();
+      throw new Error("Invalid username or password");
     } catch (err) {
       console.error("Login failed:", err);
       setError(err.message || "Login failed");
@@ -69,15 +107,11 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center px-4">
-      {/* Animated dark gradient background with red accents */}
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-red-900 to-black animate-gradient-shift"></div>
-
-      {/* Animated geometric shapes */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-red-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
       <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-blob animation-delay-4000"></div>
-
-      {/* Grid overlay effect */}
       <div className="absolute inset-0 opacity-10">
         <div
           className="absolute inset-0"
@@ -91,7 +125,6 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
 
       {/* Main content */}
       <div className="relative z-10">
-        {/* Admin Badge with shield icon */}
         <div
           className={`text-center mb-8 transition-all duration-1000 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10"
@@ -107,31 +140,25 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
           </div>
         </div>
 
-        {/* Login card with premium glass effect */}
         <div
           className={`w-full max-w-md backdrop-blur-2xl bg-black/30 rounded-3xl p-8 shadow-2xl border border-red-500/20 transition-all duration-1000 ${
             mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}
         >
-          {/* Top border glow effect */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse-slow"></div>
 
           <div className="space-y-6">
-            {/* Username field */}
+            {/* Username */}
             <div className="group">
               <label className=" text-red-400 font-semibold mb-2 text-sm uppercase tracking-wide flex items-center gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
                     d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
                     clipRule="evenodd"
                   />
                 </svg>
-                Your ID
+                Your ID or Name
               </label>
               <div className="relative">
                 <input
@@ -145,26 +172,17 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
                   }
                   onKeyDown={handleUsernameKeyDown}
                   className="w-full px-5 py-4 bg-white/5 backdrop-blur-sm border-2 border-red-500/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:bg-white/10 transition-all duration-300 group-hover:border-red-500/50"
-                  placeholder="Enter admin username"
+                  placeholder="Enter ID or name"
+                  maxLength={15}
+                  required
                 />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none animate-shimmer"></div>
               </div>
             </div>
 
-            {/* Password field */}
+            {/* Password */}
             <div className="group">
               <label className=" text-red-400 font-semibold mb-2 text-sm uppercase tracking-wide flex items-center gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
                 Password is "rith"
               </label>
               <div className="relative">
@@ -180,13 +198,15 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
                   }
                   onKeyDown={handlePasswordKeyDown}
                   className="w-full px-5 py-4 bg-white/5 backdrop-blur-sm border-2 border-red-500/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:bg-white/10 transition-all duration-300 group-hover:border-red-500/50"
-                  placeholder="Enter admin password"
+                  placeholder="Enter password"
+                  maxLength={15}
+                  required
                 />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none animate-shimmer"></div>
               </div>
             </div>
 
-            {/* Login button */}
+            {/* Button */}
             <button
               onClick={handleLogin}
               disabled={isLoading}
@@ -214,32 +234,13 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
                     Authenticating...
                   </>
                 ) : (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Login as Admin
-                  </>
+                  "Login"
                 )}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-red-700 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="absolute inset-0 bg-white/10 animate-pulse-fast"></div>
-              </div>
-              {/* Corner highlights */}
-              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/30 rounded-tl-2xl"></div>
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/30 rounded-br-2xl"></div>
             </button>
 
-            {/* Error message with animation */}
+            {/* Error */}
             {error && (
               <div className="bg-red-500/20 backdrop-blur-sm border border-red-400/50 text-red-300 px-4 py-3 rounded-xl text-sm animate-shake flex items-start gap-2">
                 <svg
@@ -259,7 +260,6 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
           </div>
         </div>
 
-        {/* Security badge */}
         <div
           className={`text-center mt-6 transition-all duration-1000 delay-300 ${
             mounted ? "opacity-100" : "opacity-0"
@@ -273,7 +273,7 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
             >
               <path
                 fillRule="evenodd"
-                d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                d="M2.166 4.999A11.954 11.954 0 0010 1.944A11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001c0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                 clipRule="evenodd"
               />
             </svg>
@@ -282,7 +282,7 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
         </div>
       </div>
 
-      {/* CSS Animations */}
+      {/* Animations */}
       <style jsx>{`
         @keyframes gradient-shift {
           0%,
@@ -293,7 +293,6 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
             background-position: 100% 50%;
           }
         }
-
         @keyframes blob {
           0%,
           100% {
@@ -306,7 +305,6 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
             transform: translate(-20px, 20px) scale(0.9);
           }
         }
-
         @keyframes shimmer {
           0% {
             transform: translateX(-100%);
@@ -315,7 +313,6 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
             transform: translateX(100%);
           }
         }
-
         @keyframes shake {
           0%,
           100% {
@@ -335,73 +332,24 @@ const FormLoginAdmin = ({ userCredentials, setUserCredentials, onLogin }) => {
             transform: translateX(5px);
           }
         }
-
-        @keyframes pulse-slow {
-          0%,
-          100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.6;
-          }
-        }
-
-        @keyframes pulse-fast {
-          0%,
-          100% {
-            opacity: 0.3;
-          }
-          50% {
-            opacity: 0.6;
-          }
-        }
-
-        @keyframes fade-in-delay {
-          0% {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
         .animate-gradient-shift {
           background-size: 200% 200%;
           animation: gradient-shift 15s ease infinite;
         }
-
         .animate-blob {
           animation: blob 7s infinite;
         }
-
         .animation-delay-2000 {
           animation-delay: 2s;
         }
-
         .animation-delay-4000 {
           animation-delay: 4s;
         }
-
         .animate-shimmer {
           animation: shimmer 2s infinite;
         }
-
         .animate-shake {
           animation: shake 0.5s;
-        }
-
-        .animate-pulse-slow {
-          animation: pulse-slow 3s ease-in-out infinite;
-        }
-
-        .animate-pulse-fast {
-          animation: pulse-fast 1s ease-in-out infinite;
-        }
-
-        .animate-fade-in-delay {
-          animation: fade-in-delay 1s ease-out 0.5s both;
         }
       `}</style>
     </div>

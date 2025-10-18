@@ -1,13 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
 
 const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const employeeNames = [
-  "SUONG SOVOTANAK", "HENG MENGLY", "POR KIMHUCHOR", "ORN TAK", "SOTH SOKLAY",
-  "PHOEUN SOPHANY", "HENG THIRITH"
+  "LEONG IN LAI",
+  "KHA MAKARA",
+  "SIVAKUMAR",
+  "NGOUN PHANNY",
+  "SUONG SOVOTANAK",
+  "HENG MENGLY",
+  "POR KIMHUCHOR",
+  "ORN TAK",
+  "SOTH SOKLAY",
+  "PHOEUN SOPHANY",
+  "HENG THIRITH",
 ];
 
 const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
@@ -27,7 +46,7 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
   const [selectedDate, setSelectedDate] = useState({
     day: today.getDate(),
     month: today.getMonth(),
-    year: today.getFullYear()
+    year: today.getFullYear(),
   });
   const [tempDate, setTempDate] = useState(selectedDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -41,7 +60,7 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
       return employeeNames.map(() => ({
         start: isWeekendDay ? "" : "08:00",
         end: isWeekendDay ? "" : "17:36",
-        status: isWeekendDay ? "off" : "work"
+        status: isWeekendDay ? "off" : "work",
       }));
     });
   };
@@ -76,7 +95,7 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
     setSelectedDate({
       day: today.getDate(),
       month: today.getMonth(),
-      year: today.getFullYear()
+      year: today.getFullYear(),
     });
   };
 
@@ -87,7 +106,7 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
       ths[selectedDate.day].scrollIntoView({
         behavior: "smooth",
         inline: "center",
-        block: "nearest"
+        block: "nearest",
       });
     }
   }, [selectedDate]);
@@ -115,7 +134,7 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
           </h1>
           <div className="w-12 md:w-16"></div>
         </div>
-        
+
         <div className="flex gap-2 justify-center mt-2">
           <button
             onClick={() => setShowDatePicker(true)}
@@ -123,20 +142,20 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
           >
             Select Date
           </button>
-          <button 
-            onClick={prevMonth} 
+          <button
+            onClick={prevMonth}
             className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
           >
             Prev
           </button>
-          <button 
-            onClick={nextMonth} 
+          <button
+            onClick={nextMonth}
             className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
           >
             Next
           </button>
-          <button 
-            onClick={goToToday} 
+          <button
+            onClick={goToToday}
             className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-blue-600 transition"
           >
             Today
@@ -151,31 +170,35 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
             <h2 className="text-lg font-semibold text-center p-4 border-b">
               Select Date
             </h2>
-            
+
             <div className="flex-1 overflow-y-auto p-4">
               {/* Year Selection */}
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-2 text-gray-700">Year</h3>
                 <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 20 }, (_, i) => 2015 + i).map((year) => (
-                    <button
-                      key={year}
-                      onClick={() => setTempDate({ ...tempDate, year })}
-                      className={`px-3 py-2 rounded text-sm transition ${
-                        tempDate.year === year
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  ))}
+                  {Array.from({ length: 20 }, (_, i) => 2015 + i).map(
+                    (year) => (
+                      <button
+                        key={year}
+                        onClick={() => setTempDate({ ...tempDate, year })}
+                        className={`px-3 py-2 rounded text-sm transition ${
+                          tempDate.year === year
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
               {/* Month Selection */}
               <div className="mb-4">
-                <h3 className="text-sm font-medium mb-2 text-gray-700">Month</h3>
+                <h3 className="text-sm font-medium mb-2 text-gray-700">
+                  Month
+                </h3>
                 <div className="grid grid-cols-3 gap-2">
                   {months.map((m, idx) => (
                     <button
@@ -241,25 +264,33 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
                 const day = i + 1;
                 const weekday = getWeekday(day, currentMonth, currentYear);
                 const monthShort = months[currentMonth].slice(0, 3);
-                const isToday = day === today.getDate() && 
-                               currentMonth === today.getMonth() && 
-                               currentYear === today.getFullYear();
+                const isToday =
+                  day === today.getDate() &&
+                  currentMonth === today.getMonth() &&
+                  currentYear === today.getFullYear();
                 const isWeekendDay = isWeekend(day, currentMonth, currentYear);
-                const isSelected = day === selectedDate.day && 
-                                  selectedDate.month === currentMonth && 
-                                  selectedDate.year === currentYear;
-                
+                const isSelected =
+                  day === selectedDate.day &&
+                  selectedDate.month === currentMonth &&
+                  selectedDate.year === currentYear;
+
                 return (
                   <th
                     key={i}
                     className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center text-xs md:text-sm min-w-[80px] md:min-w-[100px] ${
                       isSelected ? "bg-yellow-400 text-black" : ""
-                    } ${isToday && !isSelected ? "bg-gray-300 text-black" : ""} ${
-                      isWeekendDay && !isSelected && !isToday ? "bg-red-200 text-red-900" : ""
+                    } ${
+                      isToday && !isSelected ? "bg-gray-300 text-black" : ""
+                    } ${
+                      isWeekendDay && !isSelected && !isToday
+                        ? "bg-red-200 text-red-900"
+                        : ""
                     }`}
                   >
                     <div>{weekday}</div>
-                    <div>{day} {monthShort}</div>
+                    <div>
+                      {day} {monthShort}
+                    </div>
                   </th>
                 );
               })}
@@ -275,30 +306,44 @@ const MonthlyScheduleClient = ({ setCurrentView }) => {
                   const cell = schedule[dayIndex]?.[empIndex] || {
                     start: "08:00",
                     end: "17:36",
-                    status: "work"
+                    status: "work",
                   };
-                  
+
                   const day = dayIndex + 1;
-                  const isWeekendDay = isWeekend(day, currentMonth, currentYear);
-                  const isColumnSelected = day === selectedDate.day && 
-                                          selectedDate.month === currentMonth && 
-                                          selectedDate.year === currentYear;
-                  const isToday = day === today.getDate() && 
-                                 currentMonth === today.getMonth() && 
-                                 currentYear === today.getFullYear();
-                  const text = cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`;
-                  
+                  const isWeekendDay = isWeekend(
+                    day,
+                    currentMonth,
+                    currentYear
+                  );
+                  const isColumnSelected =
+                    day === selectedDate.day &&
+                    selectedDate.month === currentMonth &&
+                    selectedDate.year === currentYear;
+                  const isToday =
+                    day === today.getDate() &&
+                    currentMonth === today.getMonth() &&
+                    currentYear === today.getFullYear();
+                  const text =
+                    cell.status === "off"
+                      ? "Day Off"
+                      : `${cell.start}-${cell.end}`;
+
                   return (
                     <td
                       key={dayIndex}
                       className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center text-xs md:text-sm ${
                         isColumnSelected ? "bg-yellow-100" : ""
                       } ${isToday && !isColumnSelected ? "bg-gray-200" : ""} ${
-                        !isColumnSelected && !isToday && (cell.status === "off" || isWeekendDay)
+                        !isColumnSelected &&
+                        !isToday &&
+                        (cell.status === "off" || isWeekendDay)
                           ? "bg-red-50 text-red-800"
                           : ""
                       } ${
-                        !isColumnSelected && !isToday && cell.status !== "off" && !isWeekendDay
+                        !isColumnSelected &&
+                        !isToday &&
+                        cell.status !== "off" &&
+                        !isWeekendDay
                           ? "bg-green-50 text-green-800"
                           : ""
                       }`}

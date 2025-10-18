@@ -135,6 +135,7 @@ const IGSApp = () => {
   }
 
   return null;
+  
 };
 
 export default IGSApp;
