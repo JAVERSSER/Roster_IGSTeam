@@ -151,8 +151,13 @@ const SwapRequestsAdmin = ({ setCurrentView }) => {
 
   // Handle date selection
   const handleDateSelect = () => {
-    const selectedDate = new Date(tempDate.year, tempDate.month, tempDate.day);
-    setNewSwap({ ...newSwap, date: selectedDate.toISOString().split("T")[0] });
+    const { year, month, day } = tempDate;
+    // Format as yyyy-mm-dd manually
+    const formattedDate = `${year}-${String(month + 1).padStart(
+      2,
+      "0"
+    )}-${String(day).padStart(2, "0")}`;
+    setNewSwap({ ...newSwap, date: formattedDate });
     setShowDatePicker(false);
   };
 
