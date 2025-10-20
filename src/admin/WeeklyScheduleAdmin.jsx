@@ -274,7 +274,7 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     tempDate.year !== undefined ? tempDate.year : today.getFullYear();
   const daysInTempMonth = getDaysInMonth(tempMonthForDays, tempYearForDays);
 
-  // ---------- Export helpers ----------
+  // ---------- Export File ----------
 
   const filenameBase = () => {
     const s = weekDates[0];
