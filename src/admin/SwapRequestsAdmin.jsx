@@ -291,8 +291,8 @@ const SwapRequestsAdmin = ({ setCurrentView }) => {
               <div className="flex-1 overflow-y-auto p-4">
                 {/* Year Selection */}
                 <div className="mb-4">
-                  <h3 className="font-semibold mb-2 text-center">Year</h3>
-                  <div className="flex flex-wrap gap-2 justify-center">
+                  <h3 className="font-semibold mb-2 text-start">Year</h3>
+                  <div className="flex flex-wrap gap-2 justify-start">
                     {Array.from(
                       { length: 5 },
                       (_, i) => new Date().getFullYear() + i
@@ -314,7 +314,7 @@ const SwapRequestsAdmin = ({ setCurrentView }) => {
 
                 {/* Month Selection */}
                 <div className="mb-4">
-                  <h3 className="font-semibold mb-2 text-center">Month</h3>
+                  <h3 className="font-semibold mb-2 text-start">Month</h3>
                   <div className="grid grid-cols-3 gap-2">
                     {months.map((month, idx) => (
                       <button
@@ -334,7 +334,7 @@ const SwapRequestsAdmin = ({ setCurrentView }) => {
 
                 {/* Day Selection */}
                 <div className="mb-4">
-                  <h3 className="font-semibold mb-2 text-center">
+                  <h3 className="font-semibold mb-2 text-start">
                     {months[tempDate.month]} {tempDate.year}
                   </h3>
                   <div className="grid grid-cols-7 gap-1 text-xs">
