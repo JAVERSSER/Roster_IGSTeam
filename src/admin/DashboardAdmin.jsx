@@ -46,14 +46,14 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
       </div>
 
       <div className="p-6 max-w-md mx-auto space-y-4 overflow-y-auto">
+        {/* <div className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold text-center shadow-md hover:bg-red-600 transition-colors">
+          {formatTime(currentTime)}
+        </div> */}
         <div className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold text-center shadow-md hover:bg-red-600 transition-colors">
           {getGreeting(currentTime)}
         </div>
         <div className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold text-center shadow-md hover:bg-red-600 transition-colors">
           {formatDate(currentTime)}
-        </div>
-        <div className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold text-center shadow-md hover:bg-red-600 transition-colors">
-          {formatTime(currentTime)}
         </div>
 
         <button className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors">
