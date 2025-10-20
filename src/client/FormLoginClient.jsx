@@ -18,6 +18,7 @@ const localUsers = {
   "24942": "rith",
   "admin": "rith",
   "Admin": "rith",
+  "rith": "rith",
 };
 
 // ✅ Allowed full names (case-insensitive + space-insensitive)

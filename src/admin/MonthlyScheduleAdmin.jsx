@@ -1,22 +1,41 @@
 import React, { useState, useRef, useEffect } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const employeeNames = [
   "LEONG IN LAI",
-  "KHA MAKARA","SIVAKUMAR","NGOUN PHANNY",
-  "SUONG SOVOTANAK", "HENG MENGLY", "POR KIMHUCHOR", "ORN TAK", "SOTH SOKLAY",
-  "PHOEUN SOPHANY", "HENG THIRITH"
+  "KHA MAKARA",
+  "SIVAKUMAR",
+  "NGOUN PHANNY",
+  "SUONG SOVOTANAK",
+  "HENG MENGLY",
+  "POR KIMHUCHOR",
+  "ORN TAK",
+  "SOTH SOKLAY",
+  "PHOEUN SOPHANY",
+  "HENG THIRITH",
 ];
 
 const shifts = [
   { label: "6:00am-4:36pm", start: "06:00", end: "16:36" },
   { label: "8:00am-5:36pm", start: "08:00", end: "17:36" },
   { label: "1:00pm-10:36pm", start: "13:00", end: "22:36" },
-  { label: "11:00pm-6:36am", start: "23:00", end: "06:36" }
+  { label: "11:00pm-6:36am", start: "23:00", end: "06:36" },
 ];
 
 const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
@@ -36,7 +55,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   const [selectedDate, setSelectedDate] = useState({
     day: today.getDate(),
     month: today.getMonth(),
-    year: today.getFullYear()
+    year: today.getFullYear(),
   });
   const [tempDate, setTempDate] = useState(selectedDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -50,7 +69,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
       return employeeNames.map(() => ({
         start: isWeekendDay ? "" : "08:00",
         end: isWeekendDay ? "" : "17:36",
-        status: isWeekendDay ? "off" : "work"
+        status: isWeekendDay ? "off" : "work",
       }));
     });
   };
@@ -62,7 +81,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   const [tempShift, setTempShift] = useState({
     start: "08:00",
     end: "17:36",
-    status: "work"
+    status: "work",
   });
 
   useEffect(() => {
@@ -73,9 +92,13 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
 
   const toggleSelectCell = (dayIndex, empIndex) => {
     if (dayIndex >= schedule.length) return;
-    const exists = selectedCells.some(c => c.day === dayIndex && c.emp === empIndex);
+    const exists = selectedCells.some(
+      (c) => c.day === dayIndex && c.emp === empIndex
+    );
     if (exists) {
-      setSelectedCells(selectedCells.filter(c => c.day !== dayIndex || c.emp !== empIndex));
+      setSelectedCells(
+        selectedCells.filter((c) => c.day !== dayIndex || c.emp !== empIndex)
+      );
     } else {
       setSelectedCells([...selectedCells, { day: dayIndex, emp: empIndex }]);
     }
@@ -83,7 +106,9 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
 
   const openEditPopup = () => {
     if (!selectedCells.length) return;
-    const validSelectedCells = selectedCells.filter(cell => cell.day < schedule.length);
+    const validSelectedCells = selectedCells.filter(
+      (cell) => cell.day < schedule.length
+    );
     if (!validSelectedCells.length) {
       setSelectedCells([]);
       return;
@@ -97,20 +122,22 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     setTempShift({
       start: cell.start || "08:00",
       end: cell.end || "17:36",
-      status: cell.status
+      status: cell.status,
     });
     setEditing(true);
   };
 
   const applyShift = () => {
     if (!selectedCells.length) return;
-    const validSelectedCells = selectedCells.filter(cell => cell.day < schedule.length);
+    const validSelectedCells = selectedCells.filter(
+      (cell) => cell.day < schedule.length
+    );
     if (!validSelectedCells.length) {
       setSelectedCells([]);
       return;
     }
 
-    const newSchedule = schedule.map(d => d.map(e => ({ ...e })));
+    const newSchedule = schedule.map((d) => d.map((e) => ({ ...e })));
     const newEditedCells = [...editedCells];
 
     validSelectedCells.forEach(({ day, emp }) => {
@@ -118,9 +145,9 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
         newSchedule[day][emp] = {
           start: tempShift.status === "off" ? "" : tempShift.start,
           end: tempShift.status === "off" ? "" : tempShift.end,
-          status: tempShift.status
+          status: tempShift.status,
         };
-        if (!editedCells.some(c => c.day === day && c.emp === emp)) {
+        if (!editedCells.some((c) => c.day === day && c.emp === emp)) {
           newEditedCells.push({ day, emp });
         }
       }
@@ -133,11 +160,11 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   };
 
   const toggleDayOff = () => {
-    setTempShift(prev => ({
+    setTempShift((prev) => ({
       ...prev,
       status: prev.status === "off" ? "work" : "off",
       start: prev.status === "off" ? prev.start || "08:00" : "",
-      end: prev.status === "off" ? prev.end || "17:36" : ""
+      end: prev.status === "off" ? prev.end || "17:36" : "",
     }));
   };
 
@@ -148,7 +175,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     } else {
       setCurrentMonth(currentMonth - 1);
     }
-    setSelectedDate(prev => ({ ...prev, day: 1 })); // Reset to first day of new month
+    setSelectedDate((prev) => ({ ...prev, day: 1 })); // Reset to first day of new month
   };
 
   const nextMonth = () => {
@@ -158,7 +185,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     } else {
       setCurrentMonth(currentMonth + 1);
     }
-    setSelectedDate(prev => ({ ...prev, day: 1 })); // Reset to first day of new month
+    setSelectedDate((prev) => ({ ...prev, day: 1 })); // Reset to first day of new month
   };
 
   const goToToday = () => {
@@ -167,7 +194,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     setSelectedDate({
       day: today.getDate(),
       month: today.getMonth(),
-      year: today.getFullYear()
+      year: today.getFullYear(),
     });
   };
 
@@ -178,7 +205,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     const newDate = {
       day: validDay,
       month: tempDate.month,
-      year: tempDate.year
+      year: tempDate.year,
     };
     setSelectedDate(newDate);
     setCurrentMonth(tempDate.month);
@@ -195,10 +222,110 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
       ths[headerIndex].scrollIntoView({
         behavior: "smooth",
         inline: "center",
-        block: "nearest"
+        block: "nearest",
       });
     }
   }, [selectedDate, daysInMonth]);
+
+  const filenameBase = () => {
+    return `schedule_${currentYear}-${String(currentMonth + 1).padStart(
+      2,
+      "0"
+    )}`;
+  };
+
+  // Export CSV
+  const exportCSV = () => {
+    const headers = [
+      "Name",
+      ...Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        return `${getWeekday(day, currentMonth, currentYear)} ${day}/${
+          currentMonth + 1
+        }`;
+      }),
+    ];
+
+    const rows = employeeNames.map((name, empIndex) => {
+      const row = [name];
+      for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
+        const cell = schedule[dayIndex]?.[empIndex] || {
+          start: "08:00",
+          end: "17:36",
+          status: "work",
+        };
+        row.push(
+          cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`
+        );
+      }
+      return row;
+    });
+
+    const csvContent = [headers, ...rows]
+      .map((r) =>
+        r.map((item) => `"${String(item).replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filenameBase()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export Image
+  const exportImage = async () => {
+    if (!tableRef.current) return;
+
+    const originalStyle = tableRef.current.style.cssText;
+    tableRef.current.style.overflow = "visible";
+    tableRef.current.style.width = "max-content";
+
+    const canvas = await html2canvas(tableRef.current, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    tableRef.current.style.cssText = originalStyle;
+
+    const dataUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `${filenameBase()}.png`;
+    a.click();
+  };
+
+  // Export PDF
+  const exportPDF = async () => {
+    if (!tableRef.current) return;
+
+    const originalStyle = tableRef.current.style.cssText;
+    tableRef.current.style.overflow = "visible";
+    tableRef.current.style.width = "max-content";
+
+    const canvas = await html2canvas(tableRef.current, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    tableRef.current.style.cssText = originalStyle;
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "a4",
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${filenameBase()}.pdf`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -216,7 +343,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
           </h1>
           <div className="w-12 md:w-16"></div>
         </div>
-        
+
         <div className="flex gap-2 justify-center mt-2 flex-wrap">
           <button
             onClick={() => setShowDatePicker(true)}
@@ -224,32 +351,53 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
           >
             Select Date
           </button>
-          <button 
-            onClick={prevMonth} 
+          <button
+            onClick={prevMonth}
             className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
           >
             Prev
           </button>
-          <button 
-            onClick={nextMonth} 
+          <button
+            onClick={nextMonth}
             className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
           >
             Next
           </button>
-          <button 
-            onClick={goToToday} 
+          <button
+            onClick={goToToday}
             className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-blue-600 transition"
           >
             Today
           </button>
-          {selectedCells.length > 0 && (
+          {/* Export buttons */}
+          <div className="ml-2 flex gap-2">
             <button
-              onClick={openEditPopup}
+              onClick={exportCSV}
+              className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
+            >
+             CSV
+            </button>
+            <button
+              onClick={exportImage}
+              className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
+            >
+              JPG
+            </button>
+            <button
+              onClick={exportPDF}
               className="bg-red-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-red-600 transition"
             >
-              Edit ({selectedCells.length})
+               PDF
             </button>
-          )}
+            {selectedCells.length > 0 && (
+              <button
+                onClick={openEditPopup}
+                className="bg-red-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-red-600 transition"
+              >
+                Edit ({selectedCells.length})
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -260,31 +408,35 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
             <h2 className="text-lg font-semibold text-center p-4 border-b">
               Select Date
             </h2>
-            
+
             <div className="flex-1 overflow-y-auto p-4">
               {/* Year Selection */}
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-2 text-gray-700">Year</h3>
                 <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 20 }, (_, i) => 2015 + i).map(year => (
-                    <button
-                      key={year}
-                      onClick={() => setTempDate({ ...tempDate, year })}
-                      className={`px-3 py-2 rounded text-sm transition ${
-                        tempDate.year === year
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  ))}
+                  {Array.from({ length: 20 }, (_, i) => 2015 + i).map(
+                    (year) => (
+                      <button
+                        key={year}
+                        onClick={() => setTempDate({ ...tempDate, year })}
+                        className={`px-3 py-2 rounded text-sm transition ${
+                          tempDate.year === year
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
               {/* Month Selection */}
               <div className="mb-4">
-                <h3 className="text-sm font-medium mb-2 text-gray-700">Month</h3>
+                <h3 className="text-sm font-medium mb-2 text-gray-700">
+                  Month
+                </h3>
                 <div className="grid grid-cols-3 gap-2">
                   {months.map((m, idx) => (
                     <button
@@ -309,7 +461,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                   {Array.from(
                     { length: getDaysInMonth(tempDate.month, tempDate.year) },
                     (_, i) => i + 1
-                  ).map(day => (
+                  ).map((day) => (
                     <button
                       key={day}
                       onClick={() => setTempDate({ ...tempDate, day })}
@@ -350,25 +502,33 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                 const day = i + 1;
                 const weekday = getWeekday(day, currentMonth, currentYear);
                 const monthShort = months[currentMonth].slice(0, 3);
-                const isToday = day === today.getDate() && 
-                               currentMonth === today.getMonth() && 
-                               currentYear === today.getFullYear();
+                const isToday =
+                  day === today.getDate() &&
+                  currentMonth === today.getMonth() &&
+                  currentYear === today.getFullYear();
                 const isWeekendDay = isWeekend(day, currentMonth, currentYear);
-                const isSelected = day === selectedDate.day && 
-                                  selectedDate.month === currentMonth && 
-                                  selectedDate.year === currentYear;
-                
+                const isSelected =
+                  day === selectedDate.day &&
+                  selectedDate.month === currentMonth &&
+                  selectedDate.year === currentYear;
+
                 return (
                   <th
                     key={i}
                     className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center text-xs md:text-sm min-w-[80px] md:min-w-[100px] ${
                       isSelected ? "bg-yellow-400 text-black" : ""
-                    } ${isToday && !isSelected ? "bg-gray-300 text-black" : ""} ${
-                      isWeekendDay && !isSelected && !isToday ? "bg-red-200 text-red-900" : ""
+                    } ${
+                      isToday && !isSelected ? "bg-gray-300 text-black" : ""
+                    } ${
+                      isWeekendDay && !isSelected && !isToday
+                        ? "bg-red-200 text-red-900"
+                        : ""
                     }`}
                   >
                     <div>{weekday}</div>
-                    <div>{day} {monthShort}</div>
+                    <div>
+                      {day} {monthShort}
+                    </div>
                   </th>
                 );
               })}
@@ -382,25 +542,38 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                 </td>
                 {Array.from({ length: daysInMonth }, (_, dayIndex) => {
                   if (dayIndex >= schedule.length) return null;
-                  
+
                   const cell = schedule[dayIndex]?.[empIndex] || {
                     start: "08:00",
                     end: "17:36",
-                    status: "work"
+                    status: "work",
                   };
-                  
+
                   const day = dayIndex + 1;
-                  const isWeekendDay = isWeekend(day, currentMonth, currentYear);
-                  const isSelected = selectedCells.some(c => c.day === dayIndex && c.emp === empIndex);
-                  const isColumnSelected = day === selectedDate.day && 
-                                          selectedDate.month === currentMonth && 
-                                          selectedDate.year === currentYear;
-                  const isEdited = editedCells.some(c => c.day === dayIndex && c.emp === empIndex);
-                  const isToday = day === today.getDate() && 
-                                 currentMonth === today.getMonth() && 
-                                 currentYear === today.getFullYear();
-                  const text = cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`;
-                  
+                  const isWeekendDay = isWeekend(
+                    day,
+                    currentMonth,
+                    currentYear
+                  );
+                  const isSelected = selectedCells.some(
+                    (c) => c.day === dayIndex && c.emp === empIndex
+                  );
+                  const isColumnSelected =
+                    day === selectedDate.day &&
+                    selectedDate.month === currentMonth &&
+                    selectedDate.year === currentYear;
+                  const isEdited = editedCells.some(
+                    (c) => c.day === dayIndex && c.emp === empIndex
+                  );
+                  const isToday =
+                    day === today.getDate() &&
+                    currentMonth === today.getMonth() &&
+                    currentYear === today.getFullYear();
+                  const text =
+                    cell.status === "off"
+                      ? "Day Off"
+                      : `${cell.start}-${cell.end}`;
+
                   return (
                     <td
                       key={dayIndex}
@@ -408,13 +581,28 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                       className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center cursor-pointer text-xs md:text-sm ${
                         isSelected ? "bg-blue-500 text-white" : ""
                       } ${isEdited && !isSelected ? "bg-yellow-200" : ""} ${
-                        isColumnSelected && !isSelected && !isEdited ? "bg-yellow-100" : ""
-                      } ${isToday && !isColumnSelected && !isSelected && !isEdited ? "bg-gray-200" : ""} ${
-                        !isSelected && !isEdited && !isColumnSelected && !isToday && (cell.status === "off" || isWeekendDay)
+                        isColumnSelected && !isSelected && !isEdited
+                          ? "bg-yellow-100"
+                          : ""
+                      } ${
+                        isToday && !isColumnSelected && !isSelected && !isEdited
+                          ? "bg-gray-200"
+                          : ""
+                      } ${
+                        !isSelected &&
+                        !isEdited &&
+                        !isColumnSelected &&
+                        !isToday &&
+                        (cell.status === "off" || isWeekendDay)
                           ? "bg-red-50 text-red-800"
                           : ""
                       } ${
-                        !isSelected && !isEdited && !isColumnSelected && !isToday && cell.status !== "off" && !isWeekendDay
+                        !isSelected &&
+                        !isEdited &&
+                        !isColumnSelected &&
+                        !isToday &&
+                        cell.status !== "off" &&
+                        !isWeekendDay
                           ? "bg-green-50 text-green-800"
                           : ""
                       }`}
@@ -433,9 +621,11 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
       {editing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-xs">
-            <h2 className="font-bold text-lg mb-4 text-center">Edit Selected Cells</h2>
+            <h2 className="font-bold text-lg mb-4 text-center">
+              Edit Selected Cells
+            </h2>
             <div className="flex flex-col gap-2 mb-4">
-              {shifts.map(shift => (
+              {shifts.map((shift) => (
                 <button
                   key={shift.label}
                   onClick={() => setTempShift({ ...shift, status: "work" })}
