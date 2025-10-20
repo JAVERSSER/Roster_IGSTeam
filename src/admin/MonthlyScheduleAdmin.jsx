@@ -228,94 +228,131 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   }, [selectedDate, daysInMonth]);
 
   // ---------- Export File ----------
-// Helper: generate filename
-const filenameBase = () => {
-  const now = new Date();
-  return `schedule_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
+  const filenameBase = () => {
+    return `schedule_${currentYear}-${String(currentMonth + 1).padStart(
+      2,
+      "0"
+    )}`;
+  };
 
-// ✅ Export CSV (mobile + desktop safe)
-const exportCSV = () => {
-  const headers = ["Name", ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
-  const rows = employeeNames.map((name, empIndex) => {
-    const row = [name];
-    for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
-      const cell = schedule[dayIndex]?.[empIndex] || { start: "08:00", end: "17:36", status: "work" };
-      row.push(cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`);
-    }
-    return row;
-  });
+  // Export CSV
+  const exportCSV = () => {
+    const headers = [
+      "Name",
+      ...Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        return `${getWeekday(day, currentMonth, currentYear)} ${day}/${
+          currentMonth + 1
+        }`;
+      }),
+    ];
 
-  const csvContent = [headers, ...rows].map(r => r.join(",")).join("\r\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
+    const rows = employeeNames.map((name, empIndex) => {
+      const row = [name];
+      for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
+        const cell = schedule[dayIndex]?.[empIndex] || {
+          start: "08:00",
+          end: "17:36",
+          status: "work",
+        };
+        row.push(
+          cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`
+        );
+      }
+      return row;
+    });
 
-  // For mobile: open CSV in new tab if direct download fails
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${filenameBase()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+    const csvContent = [headers, ...rows]
+      .map((r) =>
+        r.map((item) => `"${String(item).replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\r\n");
 
-  // Mobile fallback
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 2000);
-};
-
-// ✅ Export JPG (mobile + desktop safe)
-const exportImage = async () => {
-  if (!tableRef.current) return;
-
-  const canvas = await html2canvas(tableRef.current, { scale: 2, useCORS: true });
-  const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
-
-  const filename = `${filenameBase()}.jpg`;
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-  if (isMobile) {
-    // 📱 Mobile fallback: open image in new tab so user can long-press to save
-    const newTab = window.open();
-    newTab.document.write(
-      `<p style="font-family:sans-serif;text-align:center;margin-top:1em">Tap and hold the image to save:</p><img src="${dataUrl}" style="width:100%;height:auto;">`
-    );
-  } else {
-    // 💻 Desktop: auto download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
+    a.href = url;
+    a.download = `${filenameBase()}.csv`;
     a.click();
-    document.body.removeChild(a);
-  }
-};
+    URL.revokeObjectURL(url);
+  };
 
-// ✅ Export PDF (mobile + desktop safe)
-const exportPDF = async () => {
-  if (!tableRef.current) return;
+  // Export JPG
+  const exportImage = async () => {
+    if (!tableRef.current) return;
 
-  const canvas = await html2canvas(tableRef.current, { scale: 2, useCORS: true });
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    const originalStyle = tableRef.current.style.cssText;
+    tableRef.current.style.overflow = "visible";
+    tableRef.current.style.width = "max-content";
 
-  const filename = `${filenameBase()}.pdf`;
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const canvas = await html2canvas(tableRef.current, {
+      scale: 2,
+      useCORS: true,
+    });
 
-  if (isMobile) {
-    // 📱 Mobile fallback: open PDF in new tab
-    const pdfBlob = pdf.output("blob");
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-    window.open(pdfUrl);
-  } else {
-    // 💻 Desktop: direct download
-    pdf.save(filename);
-  }
-};
+    tableRef.current.style.cssText = originalStyle;
 
+    const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
+    const filename = `${filenameBase()}.jpg`;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const fileUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = fileUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(fileUrl), 2000);
+      } catch (err) {
+        console.error("Mobile export failed:", err);
+        const newWindow = window.open();
+        newWindow.document.write(
+          `<p>Tap and hold the image to save:</p><img src="${dataUrl}" style="width:100%">`
+        );
+      }
+    } else {
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  // Export PDF
+  const exportPDF = async () => {
+    if (!tableRef.current) return;
+
+    const originalStyle = tableRef.current.style.cssText;
+    tableRef.current.style.overflow = "visible";
+    tableRef.current.style.width = "max-content";
+
+    const canvas = await html2canvas(tableRef.current, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    tableRef.current.style.cssText = originalStyle;
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "a4",
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${filenameBase()}.pdf`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
