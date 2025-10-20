@@ -325,7 +325,7 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   const exportImage = async () => {
     if (!tableRef.current) return;
 
-    // Temporarily remove overflow to capture full table
+    // Temporarily expand table for full capture
     const originalStyle = tableRef.current.style.cssText;
     tableRef.current.style.overflow = "visible";
     tableRef.current.style.width = "max-content";
@@ -335,14 +335,49 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
       useCORS: true,
     });
 
-    // Restore original style
     tableRef.current.style.cssText = originalStyle;
 
-    const dataUrl = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = `${filenameBase()}.png`;
-    a.click();
+    const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
+    const filename = `${filenameBase()}.jpg`;
+
+    // Detect mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const fileUrl = URL.createObjectURL(blob);
+
+        // Create a download link
+        const a = document.createElement("a");
+        a.href = fileUrl;
+        a.download = filename;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Revoke blob URL after short delay
+        setTimeout(() => URL.revokeObjectURL(fileUrl), 2000);
+      } catch (err) {
+        console.error("Mobile export failed:", err);
+
+        // Fallback for browsers blocking downloads
+        const newWindow = window.open();
+        newWindow.document.write(
+          `<p>Tap and hold the image to save:</p><img src="${dataUrl}" style="width:100%">`
+        );
+      }
+    } else {
+      // ✅ Desktop: regular download
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const exportPDF = async () => {
@@ -425,7 +460,7 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
               onClick={exportCSV}
               className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
             >
-             CSV
+              CSV
             </button>
             <button
               onClick={exportImage}

@@ -19,6 +19,7 @@ const localUsers = {
   "admin": "rith",
   "Admin": "rith",
   "rith": "rith",
+  "Rith": "rith",
 };
 
 // ✅ Allowed full names (case-insensitive + space-insensitive)
