@@ -42,7 +42,9 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
         <button onClick={onLogout} className="mr-3 text-red-500">
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-2xl font-bold text-red-500 flex-1 text-center">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-red-500 flex-1 text-center">
+          Admin Dashboard
+        </h1>
       </div>
 
       <div className="p-6 max-w-md mx-auto space-y-4 overflow-y-auto">
@@ -64,10 +66,42 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
         </button>
 
         <div className="flex space-x-3 mt-4">
-          <button onClick={() => setCurrentView("weekly")} className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors">Week</button>
-          <button onClick={() => setCurrentView("swap")} className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors">Swap</button>
-          <button onClick={() => setCurrentView("monthly")} className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors">Months</button>
+          <button
+            onClick={() => setCurrentView("weekly")}
+            className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors"
+          >
+            Week
+          </button>
+          <button
+            onClick={() => setCurrentView("swap")}
+            className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors"
+          >
+            Swap
+          </button>
+          <button
+            onClick={() => setCurrentView("monthly")}
+            className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors"
+          >
+            Months
+          </button>
         </div>
+
+{/* new this line  */}
+        <button
+          onClick={() => {
+            const link = document.createElement("a");
+            link.href = "file.pdf"; // path inside public folder
+            link.download = "file.pdf"; // file name to save
+            link.click();
+          }}
+          className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors"
+        >
+          File remote for donwload
+        </button>
+{/* stop  */}
+
+
+
       </div>
     </div>
   );

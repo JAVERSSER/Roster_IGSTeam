@@ -32,7 +32,7 @@ const employeeNames = [
 ];
 
 const shifts = [
-  { label: "6:00am-4:36pm", start: "06:00", end: "16:36" },
+  { label: "6:00am-4:36pm", start: "06:36", end: "16:06" },
   { label: "8:00am-5:36pm", start: "08:00", end: "17:36" },
   { label: "1:00pm-10:36pm", start: "13:00", end: "22:36" },
   { label: "11:00pm-6:36am", start: "23:00", end: "06:36" },
