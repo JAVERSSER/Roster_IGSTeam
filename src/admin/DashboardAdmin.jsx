@@ -57,14 +57,12 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
         <div className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold text-center shadow-md hover:bg-red-600 transition-colors">
           {formatDate(currentTime)}
         </div>
-
         <button className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors">
           Check In : 8:00 AM
         </button>
         <button className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors">
           Check Out : 5:36 PM
         </button>
-
         <div className="flex space-x-3 mt-4">
           <button
             onClick={() => setCurrentView("weekly")}
@@ -85,8 +83,7 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
             Months
           </button>
         </div>
-
-{/* new this line  */}
+        {/* new this line  */}
         <button
           onClick={() => {
             const link = document.createElement("a");
@@ -98,10 +95,7 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
         >
           File remote for donwload
         </button>
-{/* stop  */} 
-
-
-
+        {/* stop  */}
       </div>
     </div>
   );
