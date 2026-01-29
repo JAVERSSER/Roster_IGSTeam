@@ -3,18 +3,8 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
 const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
 
 const employeeNames = [
@@ -34,15 +24,13 @@ const shifts = [
 ];
 
 const getDaysInMonth = (month, year) => {
-  const validMonth = month || 0;
-  const validYear = year || new Date().getFullYear();
-  return new Date(validYear, validMonth + 1, 0).getDate();
+  return new Date(year || new Date().getFullYear(), (month || 0) + 1, 0).getDate();
 };
 
 const getWeekDates = (startDate) => {
   const dates = [];
   const start = new Date(startDate);
-  start.setDate(start.getDate() - (start.getDay() || 7) + 1);
+  start.setDate(start.getDate() - (start.getDay() || 7) + 1); // Monday start
   for (let i = 0; i < 7; i++) {
     const date = new Date(start);
     date.setDate(start.getDate() + i);
@@ -60,7 +48,7 @@ const getWeekday = (day, month, year) =>
 
 const isWeekend = (day, month, year) => {
   const weekday = new Date(year, month, day).getDay();
-  return weekday === 0 || weekday === 6;
+  return weekday === 0 || weekday === 6; // 0 = Sunday, 6 = Saturday
 };
 
 const WeeklyScheduleAdmin = ({ setCurrentView }) => {
@@ -72,28 +60,16 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     start.setDate(today.getDate() - (today.getDay() || 7) + 1);
     return start;
   });
+
   const [selectedDate, setSelectedDate] = useState({
     day: today.getDate(),
     month: today.getMonth(),
     year: today.getFullYear(),
   });
+
   const [tempDate, setTempDate] = useState(selectedDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const weekDates = getWeekDates(currentWeekStart);
-
-  const initializeSchedule = () => {
-    return weekDates.map(({ day, month, year }) => {
-      const isWeekendDay = isWeekend(day, month, year);
-      return employeeNames.map(() => ({
-        start: isWeekendDay ? "" : "06:00",
-        end: isWeekendDay ? "" : "16:36",
-        status: isWeekendDay ? "off" : "work",
-      }));
-    });
-  };
-
-  const [schedule, setSchedule] = useState(initializeSchedule);
+  const [schedule, setSchedule] = useState([]);
   const [editedCells, setEditedCells] = useState([]);
   const [selectedCells, setSelectedCells] = useState([]);
   const [editing, setEditing] = useState(false);
@@ -103,6 +79,19 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     status: "work",
   });
 
+  const weekDates = getWeekDates(currentWeekStart);
+
+  const initializeSchedule = () => {
+    return weekDates.map(({ day, month, year }) => {
+      const weekend = isWeekend(day, month, year);
+      return employeeNames.map(() => ({
+        start: weekend ? "" : "06:00",
+        end: weekend ? "" : "16:36",
+        status: weekend ? "off" : "work",
+      }));
+    });
+  };
+
   useEffect(() => {
     setSchedule(initializeSchedule());
     setEditedCells([]);
@@ -110,14 +99,9 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   }, [currentWeekStart]);
 
   const toggleSelectCell = (dayIndex, empIndex) => {
-    if (dayIndex >= weekDates.length) return;
-    const exists = selectedCells.some(
-      (c) => c.day === dayIndex && c.emp === empIndex
-    );
+    const exists = selectedCells.some((c) => c.day === dayIndex && c.emp === empIndex);
     if (exists) {
-      setSelectedCells(
-        selectedCells.filter((c) => c.day !== dayIndex || c.emp !== empIndex)
-      );
+      setSelectedCells(selectedCells.filter((c) => c.day !== dayIndex || c.emp !== empIndex));
     } else {
       setSelectedCells([...selectedCells, { day: dayIndex, emp: empIndex }]);
     }
@@ -125,19 +109,8 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
 
   const openEditPopup = () => {
     if (!selectedCells.length) return;
-    const validSelectedCells = selectedCells.filter(
-      (cell) => cell.day < weekDates.length
-    );
-    if (!validSelectedCells.length) {
-      setSelectedCells([]);
-      return;
-    }
-    const { day, emp } = validSelectedCells[0];
-    if (day >= weekDates.length || emp >= employeeNames.length) {
-      setSelectedCells([]);
-      return;
-    }
-    const cell = schedule[day][emp];
+    const first = selectedCells[0];
+    const cell = schedule[first.day]?.[first.emp] || { start: "06:00", end: "16:36", status: "work" };
     setTempShift({
       start: cell.start || "06:00",
       end: cell.end || "16:36",
@@ -148,32 +121,25 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
 
   const applyShift = () => {
     if (!selectedCells.length) return;
-    const validSelectedCells = selectedCells.filter(
-      (cell) => cell.day < weekDates.length
-    );
-    if (!validSelectedCells.length) {
-      setSelectedCells([]);
-      return;
-    }
 
     const newSchedule = schedule.map((d) => d.map((e) => ({ ...e })));
-    const newEditedCells = [...editedCells];
+    const newEdited = [...editedCells];
 
-    validSelectedCells.forEach(({ day, emp }) => {
+    selectedCells.forEach(({ day, emp }) => {
       if (day < newSchedule.length && emp < employeeNames.length) {
         newSchedule[day][emp] = {
           start: tempShift.status === "off" ? "" : tempShift.start,
           end: tempShift.status === "off" ? "" : tempShift.end,
           status: tempShift.status,
         };
-        if (!editedCells.some((c) => c.day === day && c.emp === emp)) {
-          newEditedCells.push({ day, emp });
+        if (!newEdited.some((c) => c.day === day && c.emp === emp)) {
+          newEdited.push({ day, emp });
         }
       }
     });
 
     setSchedule(newSchedule);
-    setEditedCells(newEditedCells);
+    setEditedCells(newEdited);
     setSelectedCells([]);
     setEditing(false);
   };
@@ -182,155 +148,89 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     setTempShift((prev) => ({
       ...prev,
       status: prev.status === "off" ? "work" : "off",
-      start: prev.status === "off" ? prev.start || "06:00" : "",
-      end: prev.status === "off" ? prev.end || "16:36" : "",
+      start: prev.status === "off" ? (prev.start || "06:00") : "",
+      end: prev.status === "off" ? (prev.end || "16:36") : "",
     }));
   };
 
-  // Generate random weekly schedule
-  // Rules: 
-  // 1. Each person works 5 days per week (2 days off)
-  // 2. Weekdays: Only 1 person working 6:00am-4:36pm shift
-  // 3. Weekends: 3 people working, each with DIFFERENT shift
   const generateRandomSchedule = () => {
-    const newSchedule = weekDates.map(() => []);
-    const newEditedCells = [];
+    const newSchedule = weekDates.map(() => Array(employeeNames.length).fill(null));
+    const newEdited = [];
 
-    // Step 1: Assign each employee 5 random work days
-    const employeeWorkDays = employeeNames.map(() => {
-      const allDays = [0, 1, 2, 3, 4, 5, 6];
-      const shuffled = allDays.sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, 5);
+    // Each employee works 5 days
+    const workDaysPerEmp = employeeNames.map(() => {
+      let days = [0,1,2,3,4,5,6];
+      days.sort(() => Math.random() - 0.5);
+      return days.slice(0, 5);
     });
 
-    // Step 2: For each day, ensure proper coverage
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const { day, month, year } = weekDates[dayIndex];
-      const isWeekendDay = isWeekend(day, month, year);
-      
-      // Count workers for this day
-      const workersThisDay = [];
-      employeeNames.forEach((_, empIndex) => {
-        if (employeeWorkDays[empIndex].includes(dayIndex)) {
-          workersThisDay.push(empIndex);
-        }
+    weekDates.forEach((_, dayIndex) => {
+      const isWeekendDay = isWeekend(weekDates[dayIndex].day, weekDates[dayIndex].month, weekDates[dayIndex].year);
+      let workers = [];
+
+      employeeNames.forEach((_, emp) => {
+        if (workDaysPerEmp[emp].includes(dayIndex)) workers.push(emp);
       });
 
       if (isWeekendDay) {
-        // Weekend: need exactly 3 workers
-        while (workersThisDay.length < 3) {
-          for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
-            if (!employeeWorkDays[empIndex].includes(dayIndex) && 
-                employeeWorkDays[empIndex].length < 5) {
-              employeeWorkDays[empIndex].push(dayIndex);
-              workersThisDay.push(empIndex);
+        // Ensure exactly 3 workers on weekend
+        while (workers.length < 3) {
+          let added = false;
+          for (let emp = 0; emp < employeeNames.length; emp++) {
+            if (!workDaysPerEmp[emp].includes(dayIndex) && workDaysPerEmp[emp].length < 5) {
+              workDaysPerEmp[emp].push(dayIndex);
+              workers.push(emp);
+              added = true;
               break;
             }
           }
-          if (workersThisDay.length < 3) {
-            for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
-              if (!employeeWorkDays[empIndex].includes(dayIndex)) {
-                employeeWorkDays[empIndex][0] = dayIndex;
-                workersThisDay.push(empIndex);
-                break;
-              }
-            }
-          }
-          if (workersThisDay.length >= 3) break;
+          if (!added) break; // prevent infinite loop
         }
       } else {
-        // Weekday: need exactly 1 worker
-        if (workersThisDay.length === 0) {
-          for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
-            if (employeeWorkDays[empIndex].length < 5) {
-              employeeWorkDays[empIndex].push(dayIndex);
-              workersThisDay.push(empIndex);
-              break;
-            }
-          }
-          if (workersThisDay.length === 0) {
-            const randomEmp = Math.floor(Math.random() * employeeNames.length);
-            employeeWorkDays[randomEmp][0] = dayIndex;
-            workersThisDay.push(randomEmp);
-          }
-        } else if (workersThisDay.length > 1) {
-          // Remove extra workers
-          while (workersThisDay.length > 1) {
-            const removeEmp = workersThisDay.pop();
-            const idx = employeeWorkDays[removeEmp].indexOf(dayIndex);
-            if (idx !== -1) {
-              employeeWorkDays[removeEmp].splice(idx, 1);
-            }
+        // Weekday: exactly 1 worker
+        if (workers.length !== 1) {
+          workers = [];
+          const possible = [];
+          employeeNames.forEach((_, emp) => {
+            if (workDaysPerEmp[emp].includes(dayIndex)) possible.push(emp);
+          });
+          if (possible.length > 0) {
+            workers = [possible[Math.floor(Math.random() * possible.length)]];
+          } else {
+            // fallback
+            const emp = Math.floor(Math.random() * employeeNames.length);
+            workers = [emp];
+            workDaysPerEmp[emp].push(dayIndex);
           }
         }
       }
-    }
 
-    // Step 3: Build the schedule with shift assignments
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      if (!newSchedule[dayIndex]) {
-        newSchedule[dayIndex] = [];
-      }
-
-      const { day, month, year } = weekDates[dayIndex];
-      const isWeekendDay = isWeekend(day, month, year);
-
-      // Get workers for this day
-      const workersThisDay = [];
+      // Assign shifts
+      weekDates.forEach((_, dIdx) => { /* reset if needed */ });
       employeeNames.forEach((_, empIndex) => {
-        if (employeeWorkDays[empIndex].includes(dayIndex)) {
-          workersThisDay.push(empIndex);
+        const isWorking = workers.includes(empIndex);
+        if (isWorking) {
+          let assignedShift;
+          if (isWeekendDay) {
+            const shiftIdx = workers.indexOf(empIndex) % 3;
+            assignedShift = shifts[shiftIdx];
+          } else {
+            assignedShift = shifts[0]; // morning only on weekdays
+          }
+          newSchedule[dayIndex][empIndex] = {
+            start: assignedShift.start,
+            end: assignedShift.end,
+            status: "work",
+          };
+        } else {
+          newSchedule[dayIndex][empIndex] = { start: "", end: "", status: "off" };
         }
+        newEdited.push({ day: dayIndex, emp: empIndex });
       });
-
-      if (isWeekendDay) {
-        // Weekend: assign 3 different shifts
-        const shuffledShifts = [...shifts].sort(() => Math.random() - 0.5);
-        
-        employeeNames.forEach((_, empIndex) => {
-          if (workersThisDay.includes(empIndex)) {
-            const workerIndex = workersThisDay.indexOf(empIndex);
-            const assignedShift = shuffledShifts[workerIndex % 3];
-            
-            newSchedule[dayIndex][empIndex] = {
-              start: assignedShift.start,
-              end: assignedShift.end,
-              status: "work",
-            };
-            newEditedCells.push({ day: dayIndex, emp: empIndex });
-          } else {
-            newSchedule[dayIndex][empIndex] = {
-              start: "",
-              end: "",
-              status: "off",
-            };
-            newEditedCells.push({ day: dayIndex, emp: empIndex });
-          }
-        });
-      } else {
-        // Weekday: only 1 person with morning shift
-        employeeNames.forEach((_, empIndex) => {
-          if (workersThisDay.includes(empIndex)) {
-            newSchedule[dayIndex][empIndex] = {
-              start: shifts[0].start, // Morning shift
-              end: shifts[0].end,
-              status: "work",
-            };
-            newEditedCells.push({ day: dayIndex, emp: empIndex });
-          } else {
-            newSchedule[dayIndex][empIndex] = {
-              start: "",
-              end: "",
-              status: "off",
-            };
-            newEditedCells.push({ day: dayIndex, emp: empIndex });
-          }
-        });
-      }
-    }
+    });
 
     setSchedule(newSchedule);
-    setEditedCells(newEditedCells);
+    setEditedCells(newEdited);
     setSelectedCells([]);
   };
 
@@ -338,24 +238,12 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     const newStart = new Date(currentWeekStart);
     newStart.setDate(currentWeekStart.getDate() - 7);
     setCurrentWeekStart(newStart);
-    const newWeekDates = getWeekDates(newStart);
-    setSelectedDate({
-      day: newWeekDates[0].day,
-      month: newWeekDates[0].month,
-      year: newWeekDates[0].year,
-    });
   };
 
   const nextWeek = () => {
     const newStart = new Date(currentWeekStart);
     newStart.setDate(currentWeekStart.getDate() + 7);
     setCurrentWeekStart(newStart);
-    const newWeekDates = getWeekDates(newStart);
-    setSelectedDate({
-      day: newWeekDates[0].day,
-      month: newWeekDates[0].month,
-      year: newWeekDates[0].year,
-    });
   };
 
   const goToToday = () => {
@@ -370,81 +258,39 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   };
 
   const selectDateDone = () => {
-    const maxDays = getDaysInMonth(tempDate.month, tempDate.year);
-    const validDay = Math.min(tempDate.day || 1, maxDays);
-    const newDate = {
-      day: validDay,
-      month: tempDate.month || 0,
-      year: tempDate.year || today.getFullYear(),
-    };
+    const year = tempDate.year || today.getFullYear();
+    const month = tempDate.month ?? today.getMonth();
+    const maxDay = getDaysInMonth(month, year);
+    const day = Math.min(tempDate.day || 1, maxDay);
+
+    const newDate = { day, month, year };
     setSelectedDate(newDate);
-    const newWeekStart = new Date(newDate.year, newDate.month, validDay);
-    newWeekStart.setDate(validDay - (newWeekStart.getDay() || 7) + 1);
-    setCurrentWeekStart(newWeekStart);
+
+    const newStart = new Date(year, month, day);
+    newStart.setDate(day - (newStart.getDay() || 7) + 1);
+    setCurrentWeekStart(newStart);
+
     setShowDatePicker(false);
   };
 
-  useEffect(() => {
-    if (!tableRef.current) return;
-    const ths = tableRef.current.querySelectorAll("thead th");
-    const selectedDayIndex = weekDates.findIndex(
-      (d) =>
-        d.day === selectedDate.day &&
-        d.month === selectedDate.month &&
-        d.year === selectedDate.year
-    );
-    const headerIndex = selectedDayIndex + 1;
-    if (ths[headerIndex] && selectedDayIndex >= 0) {
-      ths[headerIndex].scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }
-  }, [selectedDate, weekDates]);
-
-  const tempMonthForDays =
-    tempDate.month !== undefined ? tempDate.month : today.getMonth();
-  const tempYearForDays =
-    tempDate.year !== undefined ? tempDate.year : today.getFullYear();
-  const daysInTempMonth = getDaysInMonth(tempMonthForDays, tempYearForDays);
-
   const filenameBase = () => {
     const s = weekDates[0];
-    return `schedule_${s.year}-${String(s.month + 1).padStart(2, "0")}-${String(
-      s.day
-    ).padStart(2, "0")}`;
+    return `schedule_${s.year}-${String(s.month + 1).padStart(2, "0")}-${String(s.day).padStart(2, "0")}`;
   };
 
   const exportCSV = () => {
-    const headers = [
-      "Name",
-      ...weekDates.map(
-        (d) => `${getWeekday(d.day, d.month, d.year)} ${d.day}/${d.month + 1}`
-      ),
-    ];
-    const rows = employeeNames.map((name, empIndex) => {
+    const headers = ["Name", ...weekDates.map(d => `${getWeekday(d.day, d.month, d.year)} ${d.day}/${d.month + 1}`)];
+    const rows = employeeNames.map((name, emp) => {
       const row = [name];
-      for (let dayIndex = 0; dayIndex < weekDates.length; dayIndex++) {
-        const cell = schedule[dayIndex]?.[empIndex] || {
-          start: "06:00",
-          end: "16:36",
-          status: "work",
-        };
-        row.push(
-          cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`
-        );
-      }
+      weekDates.forEach((_, dayIdx) => {
+        const cell = schedule[dayIdx]?.[emp] || { status: "off" };
+        row.push(cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`);
+      });
       return row;
     });
 
-    const csvContent = [headers, ...rows]
-      .map((r) =>
-        r.map((item) => `"${String(item).replace(/"/g, '""')}"`).join(",")
-      )
-      .join("\r\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -455,159 +301,56 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
 
   const exportImage = async () => {
     if (!tableRef.current) return;
-
-    const originalStyle = tableRef.current.style.cssText;
-    tableRef.current.style.overflow = "visible";
-    tableRef.current.style.width = "max-content";
-
-    const canvas = await html2canvas(tableRef.current, {
-      scale: 2,
-      useCORS: true,
-    });
-
-    tableRef.current.style.cssText = originalStyle;
-
-    const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
-    const filename = `${filenameBase()}.jpg`;
-
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      try {
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        const fileUrl = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = fileUrl;
-        a.download = filename;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        setTimeout(() => URL.revokeObjectURL(fileUrl), 2000);
-      } catch (err) {
-        console.error("Mobile export failed:", err);
-
-        const newWindow = window.open();
-        newWindow.document.write(
-          `<p>Tap and hold the image to save:</p><img src="${dataUrl}" style="width:100%">`
-        );
-      }
-    } else {
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    const canvas = await html2canvas(tableRef.current, { scale: 2 });
+    const url = canvas.toDataURL("image/jpeg", 1.0);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filenameBase()}.jpg`;
+    a.click();
   };
 
   const exportPDF = async () => {
     if (!tableRef.current) return;
-
-    const originalStyle = tableRef.current.style.cssText;
-    tableRef.current.style.overflow = "visible";
-    tableRef.current.style.width = "max-content";
-
-    const canvas = await html2canvas(tableRef.current, {
-      scale: 2,
-      useCORS: true,
-    });
-
-    tableRef.current.style.cssText = originalStyle;
-
+    const canvas = await html2canvas(tableRef.current, { scale: 2 });
     const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: "landscape",
-      unit: "pt",
-      format: "a4",
-    });
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const width = pdf.internal.pageSize.getWidth();
+    const height = (canvas.height * width) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, width, height);
     pdf.save(`${filenameBase()}.pdf`);
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navbar */}
-      <div className="bg-gray-200 p-3 md:p-4 sticky top-0 z-50 shadow-md">
-        <div className="flex items-center justify-between mb-2 md:mb-0">
-          <button
-            onClick={() => setCurrentView("dashboard")}
-            className="text-red-500 font-medium text-sm md:text-base"
-          >
+      <div className="bg-gray-200 p-4 sticky top-0 z-50 shadow-md">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => setCurrentView("dashboard")} className="text-red-600 font-semibold">
             Back
           </button>
-          <h1 className="text-base md:text-xl font-bold text-red-500 mx-2 text-center flex-1">
-            Week of {months[weekDates[0].month]} {weekDates[0].day},{" "}
-            {weekDates[0].year}
+          <h1 className="text-xl font-bold text-red-600 flex-1 text-center">
+            Week of {months[weekDates[0].month]} {weekDates[0].day}, {weekDates[0].year}
           </h1>
-          <div className="w-12 md:w-16"></div>
+          <div className="w-16"></div>
         </div>
 
-        <div className="flex gap-2 justify-center mt-2 flex-wrap">
-          <button
-            onClick={() => setShowDatePicker(true)}
-            className="bg-red-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-red-600 transition"
-          >
+        <div className="flex flex-wrap gap-2 justify-center">
+          <button onClick={() => setShowDatePicker(true)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
             Select Date
           </button>
-          <button
-            onClick={prevWeek}
-            className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
-          >
-            Prev
-          </button>
-          <button
-            onClick={nextWeek}
-            className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
-          >
-            Next
-          </button>
-          <button
-            onClick={goToToday}
-            className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-blue-600 transition"
-          >
-            Today
-          </button>
-          <button
-            onClick={generateRandomSchedule}
-            className="bg-green-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-green-600 transition"
-          >
+          <button onClick={prevWeek} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Prev</button>
+          <button onClick={nextWeek} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Next</button>
+          <button onClick={goToToday} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Today</button>
+          <button onClick={generateRandomSchedule} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
             🎲 Generate
           </button>
 
-          {/* Export buttons */}
-          <div className="ml-2 flex gap-2">
-            <button
-              onClick={exportCSV}
-              className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
-            >
-              CSV
-            </button>
-            <button
-              onClick={exportImage}
-              className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
-            >
-              JPG
-            </button>
-            <button
-              onClick={exportPDF}
-              className="bg-red-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-red-600 transition"
-            >
-              PDF
-            </button>
+          <div className="flex gap-2 ml-4">
+            <button onClick={exportCSV} className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">CSV</button>
+            <button onClick={exportImage} className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">JPG</button>
+            <button onClick={exportPDF} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">PDF</button>
             {selectedCells.length > 0 && (
-              <button
-                onClick={openEditPopup}
-                className="bg-red-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-red-600 transition"
-              >
+              <button onClick={openEditPopup} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
                 Edit ({selectedCells.length})
               </button>
             )}
@@ -619,50 +362,33 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
       {showDatePicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
-            <h2 className="text-lg font-semibold text-center p-4 border-b">
-              Select Date
-            </h2>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="mb-4">
-                <h3 className="text-sm font-medium mb-2 text-gray-700">Year</h3>
+            <h2 className="text-lg font-bold p-4 border-b text-center">Select Date</h2>
+            <div className="p-4 flex-1 overflow-y-auto">
+              {/* Year */}
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Year</h3>
                 <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 20 }, (_, i) => 2015 + i).map(
-                    (year) => (
-                      <button
-                        key={year}
-                        onClick={() =>
-                          setTempDate({ ...tempDate, year, day: 1 })
-                        }
-                        className={`px-3 py-2 rounded text-sm transition ${
-                          tempDate.year === year
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
-                      >
-                        {year}
-                      </button>
-                    )
-                  )}
+                  {Array.from({ length: 20 }, (_, i) => 2020 + i).map(y => (
+                    <button
+                      key={y}
+                      onClick={() => setTempDate({ ...tempDate, year: y, day: 1 })}
+                      className={`p-2 rounded ${tempDate.year === y ? "bg-red-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                    >
+                      {y}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="mb-4">
-                <h3 className="text-sm font-medium mb-2 text-gray-700">
-                  Month
-                </h3>
+              {/* Month */}
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Month</h3>
                 <div className="grid grid-cols-3 gap-2">
-                  {months.map((m, idx) => (
+                  {months.map((m, i) => (
                     <button
                       key={m}
-                      onClick={() =>
-                        setTempDate({ ...tempDate, month: idx, day: 1 })
-                      }
-                      className={`px-3 py-2 rounded text-sm transition ${
-                        tempDate.month === idx
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
+                      onClick={() => setTempDate({ ...tempDate, month: i, day: 1 })}
+                      className={`p-2 rounded ${tempDate.month === i ? "bg-red-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
                     >
                       {m}
                     </button>
@@ -670,33 +396,24 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
                 </div>
               </div>
 
+              {/* Day */}
               <div>
-                <h3 className="text-sm font-medium mb-2 text-gray-700">Day</h3>
+                <h3 className="font-medium mb-2">Day</h3>
                 <div className="grid grid-cols-7 gap-2">
-                  {Array.from({ length: daysInTempMonth }, (_, i) => i + 1).map(
-                    (day) => (
-                      <button
-                        key={day}
-                        onClick={() => setTempDate({ ...tempDate, day })}
-                        className={`p-2 rounded text-sm transition ${
-                          tempDate.day === day
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    )
-                  )}
+                  {Array.from({ length: getDaysInMonth(tempDate.month, tempDate.year) }, (_, i) => i + 1).map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setTempDate({ ...tempDate, day: d })}
+                      className={`p-2 rounded ${tempDate.day === d ? "bg-red-500 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                    >
+                      {d}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-
             <div className="p-4 border-t">
-              <button
-                onClick={selectDateDone}
-                className="w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-              >
+              <button onClick={selectDateDone} className="w-full bg-red-500 text-white py-3 rounded hover:bg-red-600">
                 Done
               </button>
             </div>
@@ -704,45 +421,27 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
         </div>
       )}
 
-      {/* Schedule Table */}
-      <div className="overflow-x-auto p-2 md:p-4" ref={tableRef}>
-        <table className="border-collapse border border-gray-300 w-max min-w-full bg-white">
+      {/* Table */}
+      <div className="overflow-x-auto p-4" ref={tableRef}>
+        <table className="border-collapse border border-gray-300 bg-white min-w-full">
           <thead>
-            <tr className="bg-red-500 text-white">
-              <th className="border border-gray-300 px-2 py-2 md:px-3 md:py-2 sticky left-0 bg-red-500 z-20 text-xs md:text-sm min-w-[100px] md:min-w-[120px]">
-                IGS Team
-              </th>
-              {Array.from({ length: daysInMonth }, (_, i) => {
-                const day = i + 1;
-                const weekday = getWeekday(day, currentMonth, currentYear);
-                const monthShort = months[currentMonth].slice(0, 3);
-                const isToday =
-                  day === today.getDate() &&
-                  currentMonth === today.getMonth() &&
-                  currentYear === today.getFullYear();
-                const isWeekendDay = isWeekend(day, currentMonth, currentYear);
-                const isSelected =
-                  day === selectedDate.day &&
-                  selectedDate.month === currentMonth &&
-                  selectedDate.year === currentYear;
-
+            <tr className="bg-red-600 text-white">
+              <th className="border px-4 py-3 sticky left-0 z-20 bg-red-600 min-w-[160px]">IGS Team</th>
+              {weekDates.map((d, i) => {
+                const isToday = d.day === today.getDate() && d.month === today.getMonth() && d.year === today.getFullYear();
+                const isSelected = d.day === selectedDate.day && d.month === selectedDate.month && d.year === selectedDate.year;
+                const weekend = isWeekend(d.day, d.month, d.year);
                 return (
                   <th
                     key={i}
-                    className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center text-xs md:text-sm min-w-[80px] md:min-w-[100px] ${
-                      isSelected ? "bg-yellow-400 text-black" : ""
-                    } ${
-                      isToday && !isSelected ? "bg-gray-300 text-black" : ""
-                    } ${
-                      isWeekendDay && !isSelected && !isToday
-                        ? "bg-red-200 text-red-900"
-                        : ""
+                    className={`border px-4 py-3 text-center min-w-[110px] ${
+                      isSelected ? "bg-yellow-300 text-black" :
+                      isToday ? "bg-gray-300 text-black" :
+                      weekend ? "bg-red-200 text-red-900" : ""
                     }`}
                   >
-                    <div>{weekday}</div>
-                    <div>
-                      {day} {monthShort}
-                    </div>
+                    <div className="font-bold">{getWeekday(d.day, d.month, d.year)}</div>
+                    <div>{d.day} {months[d.month].slice(0, 3)}</div>
                   </th>
                 );
               })}
@@ -751,73 +450,31 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
           <tbody>
             {employeeNames.map((name, empIndex) => (
               <tr key={empIndex}>
-                <td className="border border-gray-300 px-2 py-2 md:px-3 md:py-2 font-semibold sticky left-0 bg-white z-10 text-xs md:text-sm">
+                <td className="border px-4 py-3 font-semibold sticky left-0 bg-white z-10 min-w-[160px]">
                   {name}
                 </td>
-                {Array.from({ length: daysInMonth }, (_, dayIndex) => {
-                  if (dayIndex >= schedule.length) return null;
-
-                  const cell = schedule[dayIndex]?.[empIndex] || {
-                    start: "06:00",
-                    end: "16:36",
-                    status: "work",
-                  };
-
-                  const day = dayIndex + 1;
-                  const isWeekendDay = isWeekend(day, currentMonth, currentYear);
-                  const isSelected = selectedCells.some(
-                    (c) => c.day === dayIndex && c.emp === empIndex
-                  );
-                  const isColumnSelected =
-                    day === selectedDate.day &&
-                    selectedDate.month === currentMonth &&
-                    selectedDate.year === currentYear;
-                  const isEdited = editedCells.some(
-                    (c) => c.day === dayIndex && c.emp === empIndex
-                  );
-                  const isToday =
-                    day === today.getDate() &&
-                    currentMonth === today.getMonth() &&
-                    currentYear === today.getFullYear();
-                  const text =
-                    cell.status === "off"
-                      ? "Day Off"
-                      : `${cell.start}-${cell.end}`;
+                {weekDates.map((_, dayIndex) => {
+                  const cell = schedule[dayIndex]?.[empIndex] || { status: "off", start: "", end: "" };
+                  const isSelected = selectedCells.some(c => c.day === dayIndex && c.emp === empIndex);
+                  const isEdited = editedCells.some(c => c.day === dayIndex && c.emp === empIndex);
+                  const isToday = weekDates[dayIndex].day === today.getDate() &&
+                                  weekDates[dayIndex].month === today.getMonth() &&
+                                  weekDates[dayIndex].year === today.getFullYear();
+                  const weekend = isWeekend(weekDates[dayIndex].day, weekDates[dayIndex].month, weekDates[dayIndex].year);
 
                   return (
                     <td
                       key={dayIndex}
                       onClick={() => toggleSelectCell(dayIndex, empIndex)}
-                      className={`border border-gray-300 px-2 py-2 md:px-3 md:py-2 text-center cursor-pointer text-xs md:text-sm ${
-                        isSelected ? "bg-blue-500 text-white" : ""
-                      } ${isEdited && !isSelected ? "bg-yellow-200" : ""} ${
-                        isColumnSelected && !isSelected && !isEdited
-                          ? "bg-yellow-100"
-                          : ""
-                      } ${
-                        isToday && !isColumnSelected && !isSelected && !isEdited
-                          ? "bg-gray-200"
-                          : ""
-                      } ${
-                        !isSelected &&
-                        !isEdited &&
-                        !isColumnSelected &&
-                        !isToday &&
-                        (cell.status === "off" || isWeekendDay)
-                          ? "bg-red-50 text-red-800"
-                          : ""
-                      } ${
-                        !isSelected &&
-                        !isEdited &&
-                        !isColumnSelected &&
-                        !isToday &&
-                        cell.status !== "off" &&
-                        !isWeekendDay
-                          ? "bg-green-50 text-green-800"
-                          : ""
+                      className={`border px-4 py-3 text-center cursor-pointer min-w-[110px] ${
+                        isSelected ? "bg-blue-600 text-white font-medium" :
+                        isEdited ? "bg-yellow-200" :
+                        isToday ? "bg-gray-200" :
+                        (cell.status === "off" || weekend) ? "bg-red-50 text-red-800" :
+                        "bg-green-50 text-green-800"
                       }`}
                     >
-                      {text}
+                      {cell.status === "off" ? "Day Off" : `${cell.start}-${cell.end}`}
                     </td>
                   );
                 })}
@@ -827,51 +484,37 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
         </table>
       </div>
 
-      {/* Edit Popup */}
+      {/* Edit Modal */}
       {editing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-xs">
-            <h2 className="font-bold text-lg mb-4 text-center">
-              Edit Selected Cells
-            </h2>
-            <div className="flex flex-col gap-2 mb-4">
-              {shifts.map((shift) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-sm">
+            <h2 className="text-xl font-bold mb-4 text-center">Edit Shift</h2>
+            <div className="space-y-3 mb-6">
+              {shifts.map(s => (
                 <button
-                  key={shift.label}
-                  onClick={() => setTempShift({ ...shift, status: "work" })}
-                  className={`px-4 py-2 rounded transition ${
-                    tempShift.start === shift.start &&
-                    tempShift.end === shift.end &&
-                    tempShift.status !== "off"
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-200 hover:bg-gray-300"
+                  key={s.label}
+                  onClick={() => setTempShift({ ...s, status: "work" })}
+                  className={`w-full p-3 rounded ${
+                    tempShift.start === s.start && tempShift.status === "work" ? "bg-red-500 text-white" : "bg-gray-200 hover:bg-gray-300"
                   }`}
                 >
-                  {shift.label}
+                  {s.label}
                 </button>
               ))}
             </div>
             <button
               onClick={toggleDayOff}
-              className={`w-full px-4 py-2 rounded mb-4 transition ${
-                tempShift.status === "off"
-                  ? "bg-gray-500 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
+              className={`w-full p-3 rounded mb-6 ${
+                tempShift.status === "off" ? "bg-gray-600 text-white" : "bg-gray-200 hover:bg-gray-300"
               }`}
             >
-              {tempShift.status === "off" ? "✓ Day Off" : "Day Off"}
+              {tempShift.status === "off" ? "✓ Day Off" : "Set Day Off"}
             </button>
-            <div className="flex gap-2">
-              <button
-                onClick={applyShift}
-                className="flex-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-              >
+            <div className="flex gap-3">
+              <button onClick={applyShift} className="flex-1 bg-red-500 text-white p-3 rounded hover:bg-red-600">
                 Apply
               </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="flex-1 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition"
-              >
+              <button onClick={() => setEditing(false)} className="flex-1 bg-gray-300 p-3 rounded hover:bg-gray-400">
                 Cancel
               </button>
             </div>
@@ -882,4 +525,4 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   );
 };
 
-export default MonthlyScheduleAdmin;
+export default WeeklyScheduleAdmin;
