@@ -18,28 +18,22 @@ const months = [
 ];
 
 const employeeNames = [
-  "LEONG IN LAI",
-  "KHA MAKARA",
-  "SIVAKUMAR",
-  "NGOUN PHANNY",
-  "SUONG SOVOTANAK",
   "HENG MENGLY",
+  "SUONG SOVOTANAK",
   "POR KIMHUCHOR",
   "ORN TAK",
   "SOTH SOKLAY",
   "PHOEUN SOPHANY",
   "HENG THIRITH",
-];
+];  
 
 const shifts = [
   { label: "6:00am-4:36pm", start: "06:36", end: "16:06" },
   { label: "8:00am-5:36pm", start: "08:00", end: "17:36" },
   { label: "1:00pm-10:36pm", start: "13:00", end: "22:36" },
-  { label: "11:00pm-6:36am", start: "23:00", end: "06:36" },
 ];
 
 const getDaysInMonth = (month, year) => {
-  // Safeguard against invalid inputs
   const validMonth = month || 0;
   const validYear = year || new Date().getFullYear();
   return new Date(validYear, validMonth + 1, 0).getDate();
@@ -48,7 +42,6 @@ const getDaysInMonth = (month, year) => {
 const getWeekDates = (startDate) => {
   const dates = [];
   const start = new Date(startDate);
-  // Adjust to the start of the week (Monday)
   start.setDate(start.getDate() - (start.getDay() || 7) + 1);
   for (let i = 0; i < 7; i++) {
     const date = new Date(start);
@@ -194,11 +187,105 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     }));
   };
 
+  // Generate random weekly schedule (each person works 5 days, at least 1 person per day)
+  const generateRandomSchedule = () => {
+    const newSchedule = weekDates.map(() => []);
+    const newEditedCells = [];
+
+    // Step 1: Ensure at least 1 person works each day
+    const dayAssignments = Array(7).fill(0); // Track how many people assigned per day
+
+    employeeNames.forEach((_, empIndex) => {
+      // Get all 7 days indices
+      const allDays = [0, 1, 2, 3, 4, 5, 6];
+      
+      // Shuffle the days array
+      const shuffledDays = allDays.sort(() => Math.random() - 0.5);
+      
+      // Select first 5 days for work, last 2 for off
+      const workDays = shuffledDays.slice(0, 5);
+      const offDays = shuffledDays.slice(5);
+
+      // Count assignments
+      workDays.forEach(day => dayAssignments[day]++);
+
+      // Assign shifts for each day
+      weekDates.forEach((_, dayIndex) => {
+        if (!newSchedule[dayIndex]) {
+          newSchedule[dayIndex] = [];
+        }
+
+        if (workDays.includes(dayIndex)) {
+          // Random shift from available shifts
+          const randomShift = shifts[Math.floor(Math.random() * shifts.length)];
+          newSchedule[dayIndex][empIndex] = {
+            start: randomShift.start,
+            end: randomShift.end,
+            status: "work",
+          };
+          newEditedCells.push({ day: dayIndex, emp: empIndex });
+        } else {
+          // Day off
+          newSchedule[dayIndex][empIndex] = {
+            start: "",
+            end: "",
+            status: "off",
+          };
+          newEditedCells.push({ day: dayIndex, emp: empIndex });
+        }
+      });
+    });
+
+    // Step 2: Check if any day has 0 workers and fix it
+    dayAssignments.forEach((count, dayIndex) => {
+      if (count === 0) {
+        // Find an employee who has this day off
+        for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
+          if (newSchedule[dayIndex][empIndex].status === "off") {
+            // Count how many work days this employee has
+            let workDaysCount = 0;
+            for (let d = 0; d < 7; d++) {
+              if (newSchedule[d][empIndex].status === "work") {
+                workDaysCount++;
+              }
+            }
+            
+            // If they have less than 5 work days, assign them this day
+            if (workDaysCount < 5) {
+              const randomShift = shifts[Math.floor(Math.random() * shifts.length)];
+              newSchedule[dayIndex][empIndex] = {
+                start: randomShift.start,
+                end: randomShift.end,
+                status: "work",
+              };
+              
+              // Remove one work day to maintain 5 days total
+              for (let d = 0; d < 7; d++) {
+                if (d !== dayIndex && newSchedule[d][empIndex].status === "work") {
+                  newSchedule[d][empIndex] = {
+                    start: "",
+                    end: "",
+                    status: "off",
+                  };
+                  break;
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    setSchedule(newSchedule);
+    setEditedCells(newEditedCells);
+    setSelectedCells([]);
+  };
+
   const prevWeek = () => {
     const newStart = new Date(currentWeekStart);
     newStart.setDate(currentWeekStart.getDate() - 7);
     setCurrentWeekStart(newStart);
-    // Reset selected date to the first day of the new week
     const newWeekDates = getWeekDates(newStart);
     setSelectedDate({
       day: newWeekDates[0].day,
@@ -211,7 +298,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     const newStart = new Date(currentWeekStart);
     newStart.setDate(currentWeekStart.getDate() + 7);
     setCurrentWeekStart(newStart);
-    // Reset selected date to the first day of the new week
     const newWeekDates = getWeekDates(newStart);
     setSelectedDate({
       day: newWeekDates[0].day,
@@ -232,7 +318,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   };
 
   const selectDateDone = () => {
-    // Simplified validation (day is now always valid due to resets)
     const maxDays = getDaysInMonth(tempDate.month, tempDate.year);
     const validDay = Math.min(tempDate.day || 1, maxDays);
     const newDate = {
@@ -256,7 +341,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
         d.month === selectedDate.month &&
         d.year === selectedDate.year
     );
-    // Adjust for 0-based index and account for the first column (IGS Team)
     const headerIndex = selectedDayIndex + 1;
     if (ths[headerIndex] && selectedDayIndex >= 0) {
       ths[headerIndex].scrollIntoView({
@@ -267,14 +351,11 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     }
   }, [selectedDate, weekDates]);
 
-  // Safeguards for tempDate in date picker (prevent empty/invalid grids)
   const tempMonthForDays =
     tempDate.month !== undefined ? tempDate.month : today.getMonth();
   const tempYearForDays =
     tempDate.year !== undefined ? tempDate.year : today.getFullYear();
   const daysInTempMonth = getDaysInMonth(tempMonthForDays, tempYearForDays);
-
-  // ---------- Export File ----------
 
   const filenameBase = () => {
     const s = weekDates[0];
@@ -283,9 +364,7 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     ).padStart(2, "0")}`;
   };
 
-  // Export CSV
   const exportCSV = () => {
-    // header: Name, Mon 1, Tue 2, ...
     const headers = [
       "Name",
       ...weekDates.map(
@@ -325,7 +404,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   const exportImage = async () => {
     if (!tableRef.current) return;
 
-    // Temporarily expand table for full capture
     const originalStyle = tableRef.current.style.cssText;
     tableRef.current.style.overflow = "visible";
     tableRef.current.style.width = "max-content";
@@ -340,7 +418,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
     const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
     const filename = `${filenameBase()}.jpg`;
 
-    // Detect mobile device
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
@@ -349,7 +426,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
         const blob = await response.blob();
         const fileUrl = URL.createObjectURL(blob);
 
-        // Create a download link
         const a = document.createElement("a");
         a.href = fileUrl;
         a.download = filename;
@@ -358,19 +434,16 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
         a.click();
         document.body.removeChild(a);
 
-        // Revoke blob URL after short delay
         setTimeout(() => URL.revokeObjectURL(fileUrl), 2000);
       } catch (err) {
         console.error("Mobile export failed:", err);
 
-        // Fallback for browsers blocking downloads
         const newWindow = window.open();
         newWindow.document.write(
           `<p>Tap and hold the image to save:</p><img src="${dataUrl}" style="width:100%">`
         );
       }
     } else {
-      // ✅ Desktop: regular download
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = filename;
@@ -383,7 +456,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   const exportPDF = async () => {
     if (!tableRef.current) return;
 
-    // Temporarily remove overflow to capture full table
     const originalStyle = tableRef.current.style.cssText;
     tableRef.current.style.overflow = "visible";
     tableRef.current.style.width = "max-content";
@@ -393,7 +465,6 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
       useCORS: true,
     });
 
-    // Restore original style
     tableRef.current.style.cssText = originalStyle;
 
     const imgData = canvas.toDataURL("image/png");
@@ -453,6 +524,12 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
           >
             Today
           </button>
+          <button
+            onClick={generateRandomSchedule}
+            className="bg-green-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-green-600 transition"
+          >
+            🎲 Generate
+          </button>
 
           {/* Export buttons */}
           <div className="ml-2 flex gap-2">
@@ -505,7 +582,7 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
                         key={year}
                         onClick={() =>
                           setTempDate({ ...tempDate, year, day: 1 })
-                        } // Reset day to 1 on year change
+                        }
                         className={`px-3 py-2 rounded text-sm transition ${
                           tempDate.year === year
                             ? "bg-red-500 text-white"
@@ -530,7 +607,7 @@ const WeeklyScheduleAdmin = ({ setCurrentView }) => {
                       key={m}
                       onClick={() =>
                         setTempDate({ ...tempDate, month: idx, day: 1 })
-                      } // Reset day to 1 on month change
+                      }
                       className={`px-3 py-2 rounded text-sm transition ${
                         tempDate.month === idx
                           ? "bg-red-500 text-white"

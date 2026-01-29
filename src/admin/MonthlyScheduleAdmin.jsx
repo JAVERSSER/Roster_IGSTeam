@@ -18,10 +18,6 @@ const months = [
 ];
 
 const employeeNames = [
-  "LEONG IN LAI",
-  "KHA MAKARA",
-  "SIVAKUMAR",
-  "NGOUN PHANNY",
   "SUONG SOVOTANAK",
   "HENG MENGLY",
   "POR KIMHUCHOR",
@@ -35,23 +31,47 @@ const shifts = [
   { label: "6:00am-4:36pm", start: "06:00", end: "16:36" },
   { label: "8:00am-5:36pm", start: "08:00", end: "17:36" },
   { label: "1:00pm-10:36pm", start: "13:00", end: "22:36" },
-  { label: "11:00pm-6:36am", start: "23:00", end: "06:36" },
 ];
 
-const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
+const getDaysInMonth = (month, year) => {
+  const validMonth = month || 0;
+  const validYear = year || new Date().getFullYear();
+  return new Date(validYear, validMonth + 1, 0).getDate();
+};
+
+const getWeekDates = (startDate) => {
+  const dates = [];
+  const start = new Date(startDate);
+  start.setDate(start.getDate() - (start.getDay() || 7) + 1);
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    dates.push({
+      day: date.getDate(),
+      month: date.getMonth(),
+      year: date.getFullYear(),
+    });
+  }
+  return dates;
+};
+
 const getWeekday = (day, month, year) =>
   new Date(year, month, day).toLocaleDateString("en-US", { weekday: "short" });
+
 const isWeekend = (day, month, year) => {
   const weekday = new Date(year, month, day).getDay();
   return weekday === 0 || weekday === 6;
 };
 
-const MonthlyScheduleAdmin = ({ setCurrentView }) => {
+const WeeklyScheduleAdmin = ({ setCurrentView }) => {
   const today = new Date();
   const tableRef = useRef(null);
 
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const start = new Date(today);
+    start.setDate(today.getDate() - (today.getDay() || 7) + 1);
+    return start;
+  });
   const [selectedDate, setSelectedDate] = useState({
     day: today.getDate(),
     month: today.getMonth(),
@@ -60,15 +80,14 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   const [tempDate, setTempDate] = useState(selectedDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+  const weekDates = getWeekDates(currentWeekStart);
 
   const initializeSchedule = () => {
-    return Array.from({ length: daysInMonth }, (_, dayIndex) => {
-      const day = dayIndex + 1;
-      const isWeekendDay = isWeekend(day, currentMonth, currentYear);
+    return weekDates.map(({ day, month, year }) => {
+      const isWeekendDay = isWeekend(day, month, year);
       return employeeNames.map(() => ({
-        start: isWeekendDay ? "" : "08:00",
-        end: isWeekendDay ? "" : "17:36",
+        start: isWeekendDay ? "" : "06:00",
+        end: isWeekendDay ? "" : "16:36",
         status: isWeekendDay ? "off" : "work",
       }));
     });
@@ -79,8 +98,8 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   const [selectedCells, setSelectedCells] = useState([]);
   const [editing, setEditing] = useState(false);
   const [tempShift, setTempShift] = useState({
-    start: "08:00",
-    end: "17:36",
+    start: "06:00",
+    end: "16:36",
     status: "work",
   });
 
@@ -88,10 +107,10 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     setSchedule(initializeSchedule());
     setEditedCells([]);
     setSelectedCells([]);
-  }, [currentMonth, currentYear]);
+  }, [currentWeekStart]);
 
   const toggleSelectCell = (dayIndex, empIndex) => {
-    if (dayIndex >= schedule.length) return;
+    if (dayIndex >= weekDates.length) return;
     const exists = selectedCells.some(
       (c) => c.day === dayIndex && c.emp === empIndex
     );
@@ -107,21 +126,21 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   const openEditPopup = () => {
     if (!selectedCells.length) return;
     const validSelectedCells = selectedCells.filter(
-      (cell) => cell.day < schedule.length
+      (cell) => cell.day < weekDates.length
     );
     if (!validSelectedCells.length) {
       setSelectedCells([]);
       return;
     }
     const { day, emp } = validSelectedCells[0];
-    if (day >= schedule.length || emp >= employeeNames.length) {
+    if (day >= weekDates.length || emp >= employeeNames.length) {
       setSelectedCells([]);
       return;
     }
     const cell = schedule[day][emp];
     setTempShift({
-      start: cell.start || "08:00",
-      end: cell.end || "17:36",
+      start: cell.start || "06:00",
+      end: cell.end || "16:36",
       status: cell.status,
     });
     setEditing(true);
@@ -130,7 +149,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   const applyShift = () => {
     if (!selectedCells.length) return;
     const validSelectedCells = selectedCells.filter(
-      (cell) => cell.day < schedule.length
+      (cell) => cell.day < weekDates.length
     );
     if (!validSelectedCells.length) {
       setSelectedCells([]);
@@ -163,34 +182,186 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     setTempShift((prev) => ({
       ...prev,
       status: prev.status === "off" ? "work" : "off",
-      start: prev.status === "off" ? prev.start || "08:00" : "",
-      end: prev.status === "off" ? prev.end || "17:36" : "",
+      start: prev.status === "off" ? prev.start || "06:00" : "",
+      end: prev.status === "off" ? prev.end || "16:36" : "",
     }));
   };
 
-  const prevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
+  // Generate random weekly schedule
+  // Rules: 
+  // 1. Each person works 5 days per week (2 days off)
+  // 2. Weekdays: Only 1 person working 6:00am-4:36pm shift
+  // 3. Weekends: 3 people working, each with DIFFERENT shift
+  const generateRandomSchedule = () => {
+    const newSchedule = weekDates.map(() => []);
+    const newEditedCells = [];
+
+    // Step 1: Assign each employee 5 random work days
+    const employeeWorkDays = employeeNames.map(() => {
+      const allDays = [0, 1, 2, 3, 4, 5, 6];
+      const shuffled = allDays.sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 5);
+    });
+
+    // Step 2: For each day, ensure proper coverage
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const { day, month, year } = weekDates[dayIndex];
+      const isWeekendDay = isWeekend(day, month, year);
+      
+      // Count workers for this day
+      const workersThisDay = [];
+      employeeNames.forEach((_, empIndex) => {
+        if (employeeWorkDays[empIndex].includes(dayIndex)) {
+          workersThisDay.push(empIndex);
+        }
+      });
+
+      if (isWeekendDay) {
+        // Weekend: need exactly 3 workers
+        while (workersThisDay.length < 3) {
+          for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
+            if (!employeeWorkDays[empIndex].includes(dayIndex) && 
+                employeeWorkDays[empIndex].length < 5) {
+              employeeWorkDays[empIndex].push(dayIndex);
+              workersThisDay.push(empIndex);
+              break;
+            }
+          }
+          if (workersThisDay.length < 3) {
+            for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
+              if (!employeeWorkDays[empIndex].includes(dayIndex)) {
+                employeeWorkDays[empIndex][0] = dayIndex;
+                workersThisDay.push(empIndex);
+                break;
+              }
+            }
+          }
+          if (workersThisDay.length >= 3) break;
+        }
+      } else {
+        // Weekday: need exactly 1 worker
+        if (workersThisDay.length === 0) {
+          for (let empIndex = 0; empIndex < employeeNames.length; empIndex++) {
+            if (employeeWorkDays[empIndex].length < 5) {
+              employeeWorkDays[empIndex].push(dayIndex);
+              workersThisDay.push(empIndex);
+              break;
+            }
+          }
+          if (workersThisDay.length === 0) {
+            const randomEmp = Math.floor(Math.random() * employeeNames.length);
+            employeeWorkDays[randomEmp][0] = dayIndex;
+            workersThisDay.push(randomEmp);
+          }
+        } else if (workersThisDay.length > 1) {
+          // Remove extra workers
+          while (workersThisDay.length > 1) {
+            const removeEmp = workersThisDay.pop();
+            const idx = employeeWorkDays[removeEmp].indexOf(dayIndex);
+            if (idx !== -1) {
+              employeeWorkDays[removeEmp].splice(idx, 1);
+            }
+          }
+        }
+      }
     }
-    setSelectedDate((prev) => ({ ...prev, day: 1 })); // Reset to first day of new month
+
+    // Step 3: Build the schedule with shift assignments
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      if (!newSchedule[dayIndex]) {
+        newSchedule[dayIndex] = [];
+      }
+
+      const { day, month, year } = weekDates[dayIndex];
+      const isWeekendDay = isWeekend(day, month, year);
+
+      // Get workers for this day
+      const workersThisDay = [];
+      employeeNames.forEach((_, empIndex) => {
+        if (employeeWorkDays[empIndex].includes(dayIndex)) {
+          workersThisDay.push(empIndex);
+        }
+      });
+
+      if (isWeekendDay) {
+        // Weekend: assign 3 different shifts
+        const shuffledShifts = [...shifts].sort(() => Math.random() - 0.5);
+        
+        employeeNames.forEach((_, empIndex) => {
+          if (workersThisDay.includes(empIndex)) {
+            const workerIndex = workersThisDay.indexOf(empIndex);
+            const assignedShift = shuffledShifts[workerIndex % 3];
+            
+            newSchedule[dayIndex][empIndex] = {
+              start: assignedShift.start,
+              end: assignedShift.end,
+              status: "work",
+            };
+            newEditedCells.push({ day: dayIndex, emp: empIndex });
+          } else {
+            newSchedule[dayIndex][empIndex] = {
+              start: "",
+              end: "",
+              status: "off",
+            };
+            newEditedCells.push({ day: dayIndex, emp: empIndex });
+          }
+        });
+      } else {
+        // Weekday: only 1 person with morning shift
+        employeeNames.forEach((_, empIndex) => {
+          if (workersThisDay.includes(empIndex)) {
+            newSchedule[dayIndex][empIndex] = {
+              start: shifts[0].start, // Morning shift
+              end: shifts[0].end,
+              status: "work",
+            };
+            newEditedCells.push({ day: dayIndex, emp: empIndex });
+          } else {
+            newSchedule[dayIndex][empIndex] = {
+              start: "",
+              end: "",
+              status: "off",
+            };
+            newEditedCells.push({ day: dayIndex, emp: empIndex });
+          }
+        });
+      }
+    }
+
+    setSchedule(newSchedule);
+    setEditedCells(newEditedCells);
+    setSelectedCells([]);
   };
 
-  const nextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
-    setSelectedDate((prev) => ({ ...prev, day: 1 })); // Reset to first day of new month
+  const prevWeek = () => {
+    const newStart = new Date(currentWeekStart);
+    newStart.setDate(currentWeekStart.getDate() - 7);
+    setCurrentWeekStart(newStart);
+    const newWeekDates = getWeekDates(newStart);
+    setSelectedDate({
+      day: newWeekDates[0].day,
+      month: newWeekDates[0].month,
+      year: newWeekDates[0].year,
+    });
+  };
+
+  const nextWeek = () => {
+    const newStart = new Date(currentWeekStart);
+    newStart.setDate(currentWeekStart.getDate() + 7);
+    setCurrentWeekStart(newStart);
+    const newWeekDates = getWeekDates(newStart);
+    setSelectedDate({
+      day: newWeekDates[0].day,
+      month: newWeekDates[0].month,
+      year: newWeekDates[0].year,
+    });
   };
 
   const goToToday = () => {
-    setCurrentMonth(today.getMonth());
-    setCurrentYear(today.getFullYear());
+    const start = new Date(today);
+    start.setDate(today.getDate() - (today.getDay() || 7) + 1);
+    setCurrentWeekStart(start);
     setSelectedDate({
       day: today.getDate(),
       month: today.getMonth(),
@@ -199,60 +370,65 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
   };
 
   const selectDateDone = () => {
-    // Validate the selected date
     const maxDays = getDaysInMonth(tempDate.month, tempDate.year);
-    const validDay = Math.min(tempDate.day, maxDays); // Ensure day doesn't exceed max days in month
+    const validDay = Math.min(tempDate.day || 1, maxDays);
     const newDate = {
       day: validDay,
-      month: tempDate.month,
-      year: tempDate.year,
+      month: tempDate.month || 0,
+      year: tempDate.year || today.getFullYear(),
     };
     setSelectedDate(newDate);
-    setCurrentMonth(tempDate.month);
-    setCurrentYear(tempDate.year);
+    const newWeekStart = new Date(newDate.year, newDate.month, validDay);
+    newWeekStart.setDate(validDay - (newWeekStart.getDay() || 7) + 1);
+    setCurrentWeekStart(newWeekStart);
     setShowDatePicker(false);
   };
 
   useEffect(() => {
     if (!tableRef.current) return;
     const ths = tableRef.current.querySelectorAll("thead th");
-    // Adjust for 0-based index and account for the first column (IGS Team)
-    const headerIndex = selectedDate.day; // day is 1-based, headers start at index 1
-    if (ths[headerIndex] && headerIndex <= daysInMonth) {
+    const selectedDayIndex = weekDates.findIndex(
+      (d) =>
+        d.day === selectedDate.day &&
+        d.month === selectedDate.month &&
+        d.year === selectedDate.year
+    );
+    const headerIndex = selectedDayIndex + 1;
+    if (ths[headerIndex] && selectedDayIndex >= 0) {
       ths[headerIndex].scrollIntoView({
         behavior: "smooth",
         inline: "center",
         block: "nearest",
       });
     }
-  }, [selectedDate, daysInMonth]);
+  }, [selectedDate, weekDates]);
 
-  // ---------- Export File ----------
+  const tempMonthForDays =
+    tempDate.month !== undefined ? tempDate.month : today.getMonth();
+  const tempYearForDays =
+    tempDate.year !== undefined ? tempDate.year : today.getFullYear();
+  const daysInTempMonth = getDaysInMonth(tempMonthForDays, tempYearForDays);
+
   const filenameBase = () => {
-    return `schedule_${currentYear}-${String(currentMonth + 1).padStart(
-      2,
-      "0"
-    )}`;
+    const s = weekDates[0];
+    return `schedule_${s.year}-${String(s.month + 1).padStart(2, "0")}-${String(
+      s.day
+    ).padStart(2, "0")}`;
   };
 
-  // Export CSV
   const exportCSV = () => {
     const headers = [
       "Name",
-      ...Array.from({ length: daysInMonth }, (_, i) => {
-        const day = i + 1;
-        return `${getWeekday(day, currentMonth, currentYear)} ${day}/${
-          currentMonth + 1
-        }`;
-      }),
+      ...weekDates.map(
+        (d) => `${getWeekday(d.day, d.month, d.year)} ${d.day}/${d.month + 1}`
+      ),
     ];
-
     const rows = employeeNames.map((name, empIndex) => {
       const row = [name];
-      for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
+      for (let dayIndex = 0; dayIndex < weekDates.length; dayIndex++) {
         const cell = schedule[dayIndex]?.[empIndex] || {
-          start: "08:00",
-          end: "17:36",
+          start: "06:00",
+          end: "16:36",
           status: "work",
         };
         row.push(
@@ -277,7 +453,6 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     URL.revokeObjectURL(url);
   };
 
-  // Export JPG
   const exportImage = async () => {
     if (!tableRef.current) return;
 
@@ -294,6 +469,7 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
 
     const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
     const filename = `${filenameBase()}.jpg`;
+
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
@@ -301,15 +477,19 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
         const response = await fetch(dataUrl);
         const blob = await response.blob();
         const fileUrl = URL.createObjectURL(blob);
+
         const a = document.createElement("a");
         a.href = fileUrl;
         a.download = filename;
+        a.style.display = "none";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+
         setTimeout(() => URL.revokeObjectURL(fileUrl), 2000);
       } catch (err) {
         console.error("Mobile export failed:", err);
+
         const newWindow = window.open();
         newWindow.document.write(
           `<p>Tap and hold the image to save:</p><img src="${dataUrl}" style="width:100%">`
@@ -325,7 +505,6 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
     }
   };
 
-  // Export PDF
   const exportPDF = async () => {
     if (!tableRef.current) return;
 
@@ -366,7 +545,8 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
             Back
           </button>
           <h1 className="text-base md:text-xl font-bold text-red-500 mx-2 text-center flex-1">
-            {months[currentMonth]} {currentYear}
+            Week of {months[weekDates[0].month]} {weekDates[0].day},{" "}
+            {weekDates[0].year}
           </h1>
           <div className="w-12 md:w-16"></div>
         </div>
@@ -379,13 +559,13 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
             Select Date
           </button>
           <button
-            onClick={prevMonth}
+            onClick={prevWeek}
             className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
           >
             Prev
           </button>
           <button
-            onClick={nextMonth}
+            onClick={nextWeek}
             className="bg-gray-300 px-3 py-1.5 rounded text-sm md:text-base hover:bg-gray-400 transition"
           >
             Next
@@ -396,6 +576,13 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
           >
             Today
           </button>
+          <button
+            onClick={generateRandomSchedule}
+            className="bg-green-500 text-white px-3 py-1.5 rounded text-sm md:text-base hover:bg-green-600 transition"
+          >
+            🎲 Generate
+          </button>
+
           {/* Export buttons */}
           <div className="ml-2 flex gap-2">
             <button
@@ -437,7 +624,6 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
             </h2>
 
             <div className="flex-1 overflow-y-auto p-4">
-              {/* Year Selection */}
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-2 text-gray-700">Year</h3>
                 <div className="grid grid-cols-4 gap-2">
@@ -445,7 +631,9 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                     (year) => (
                       <button
                         key={year}
-                        onClick={() => setTempDate({ ...tempDate, year })}
+                        onClick={() =>
+                          setTempDate({ ...tempDate, year, day: 1 })
+                        }
                         className={`px-3 py-2 rounded text-sm transition ${
                           tempDate.year === year
                             ? "bg-red-500 text-white"
@@ -459,7 +647,6 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                 </div>
               </div>
 
-              {/* Month Selection */}
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-2 text-gray-700">
                   Month
@@ -468,7 +655,9 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                   {months.map((m, idx) => (
                     <button
                       key={m}
-                      onClick={() => setTempDate({ ...tempDate, month: idx })}
+                      onClick={() =>
+                        setTempDate({ ...tempDate, month: idx, day: 1 })
+                      }
                       className={`px-3 py-2 rounded text-sm transition ${
                         tempDate.month === idx
                           ? "bg-red-500 text-white"
@@ -481,26 +670,24 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                 </div>
               </div>
 
-              {/* Day Selection */}
               <div>
                 <h3 className="text-sm font-medium mb-2 text-gray-700">Day</h3>
                 <div className="grid grid-cols-7 gap-2">
-                  {Array.from(
-                    { length: getDaysInMonth(tempDate.month, tempDate.year) },
-                    (_, i) => i + 1
-                  ).map((day) => (
-                    <button
-                      key={day}
-                      onClick={() => setTempDate({ ...tempDate, day })}
-                      className={`p-2 rounded text-sm transition ${
-                        tempDate.day === day
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  ))}
+                  {Array.from({ length: daysInTempMonth }, (_, i) => i + 1).map(
+                    (day) => (
+                      <button
+                        key={day}
+                        onClick={() => setTempDate({ ...tempDate, day })}
+                        className={`p-2 rounded text-sm transition ${
+                          tempDate.day === day
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -571,17 +758,13 @@ const MonthlyScheduleAdmin = ({ setCurrentView }) => {
                   if (dayIndex >= schedule.length) return null;
 
                   const cell = schedule[dayIndex]?.[empIndex] || {
-                    start: "08:00",
-                    end: "17:36",
+                    start: "06:00",
+                    end: "16:36",
                     status: "work",
                   };
 
                   const day = dayIndex + 1;
-                  const isWeekendDay = isWeekend(
-                    day,
-                    currentMonth,
-                    currentYear
-                  );
+                  const isWeekendDay = isWeekend(day, currentMonth, currentYear);
                   const isSelected = selectedCells.some(
                     (c) => c.day === dayIndex && c.emp === empIndex
                   );

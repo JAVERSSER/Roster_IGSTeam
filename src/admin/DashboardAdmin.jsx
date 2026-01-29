@@ -84,7 +84,7 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
           </button>
         </div>
         {/* new this line  */}
-        {/* <button
+        <button
           onClick={() => {
             const link = document.createElement("a");
             link.href = "file.pdf"; // path inside public folder
@@ -93,8 +93,8 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
           }}
           className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors"
         >
-          File remote for donwload
-        </button> */}
+          download ProjectMangeCase.pdf
+        </button>
         {/* stop  */}
       </div>
     </div>
