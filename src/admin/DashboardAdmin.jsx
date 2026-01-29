@@ -87,13 +87,13 @@ const DashboardAdmin = ({ setCurrentView, onLogout }) => {
         <button
           onClick={() => {
             const link = document.createElement("a");
-            link.href = "ProjectMangeCase.pdf"; // path inside public folder
-            link.download = "ProjectMangeCase.pdf"; // file name to save
+            link.href = "ProjectMangeCase.pptx"; // path inside public folder
+            link.download = "ProjectMangeCase.pptx"; // file name to save
             link.click();
           }}
           className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 transition-colors"
         >
-          download ProjectMangeCase.pdf
+          Download ProjectMangeCase.pptx
         </button>
         {/* stop  */}
       </div>
